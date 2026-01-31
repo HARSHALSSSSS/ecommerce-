@@ -70,20 +70,20 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
         COALESCE(AVG(total_amount), 0) as average_order_value,
         COUNT(DISTINCT user_id) as unique_customers
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
         AND status != 'cancelled'
     `, [dateRange.start, dateRange.end]);
 
     // Daily sales trend
     const dailySales = await db.all(`
       SELECT 
-        DATE(created_at) as date,
+        created_at::date as date,
         COUNT(*) as orders,
         COALESCE(SUM(total_amount), 0) as revenue
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
         AND status != 'cancelled'
-      GROUP BY DATE(created_at)
+      GROUP BY created_at::date
       ORDER BY date
     `, [dateRange.start, dateRange.end]);
 
@@ -98,7 +98,7 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
       FROM order_items oi
       JOIN products p ON p.id = oi.product_id
       JOIN orders o ON o.id = oi.order_id
-      WHERE DATE(o.created_at) BETWEEN ? AND ?
+      WHERE o.created_at::date BETWEEN $1 AND $2
         AND o.status != 'cancelled'
       GROUP BY p.id
       ORDER BY units_sold DESC
@@ -116,7 +116,7 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
       JOIN products p ON p.id = oi.product_id
       JOIN categories c ON c.id = p.category_id
       JOIN orders o ON o.id = oi.order_id
-      WHERE DATE(o.created_at) BETWEEN ? AND ?
+      WHERE o.created_at::date BETWEEN $1 AND $2
         AND o.status != 'cancelled'
       GROUP BY c.id
       ORDER BY revenue DESC
@@ -129,7 +129,7 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
         COUNT(*) as count,
         COALESCE(SUM(total_amount), 0) as revenue
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
       GROUP BY status
     `, [dateRange.start, dateRange.end]);
 
@@ -140,7 +140,7 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
         COUNT(*) as count,
         COALESCE(SUM(total_amount), 0) as revenue
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
         AND status != 'cancelled'
       GROUP BY payment_method
     `, [dateRange.start, dateRange.end]);
@@ -192,7 +192,7 @@ router.get('/tax', authenticateAdmin, async (req: Request, res: Response) => {
         COALESCE(SUM(tax_amount), 0) as total_tax_collected,
         COALESCE(AVG(tax_amount), 0) as average_tax_per_order
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
         AND status NOT IN ('cancelled', 'refunded')
         AND tax_amount > 0
     `, [dateRange.start, dateRange.end]);
@@ -200,14 +200,14 @@ router.get('/tax', authenticateAdmin, async (req: Request, res: Response) => {
     // Daily tax breakdown
     const dailyTax = await db.all(`
       SELECT 
-        DATE(created_at) as date,
+        created_at::date as date,
         COUNT(*) as orders,
         COALESCE(SUM(total_amount), 0) as gross_revenue,
         COALESCE(SUM(tax_amount), 0) as tax_collected
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
         AND status NOT IN ('cancelled', 'refunded')
-      GROUP BY DATE(created_at)
+      GROUP BY created_at::date
       ORDER BY date
     `, [dateRange.start, dateRange.end]);
 
@@ -221,7 +221,7 @@ router.get('/tax', authenticateAdmin, async (req: Request, res: Response) => {
       JOIN order_items oi ON oi.order_id = o.id
       JOIN products p ON p.id = oi.product_id
       JOIN categories c ON c.id = p.category_id
-      WHERE DATE(o.created_at) BETWEEN ? AND ?
+      WHERE o.created_at::date BETWEEN $1 AND $2
         AND o.status NOT IN ('cancelled', 'refunded')
       GROUP BY c.id
       ORDER BY tax_collected DESC
@@ -266,38 +266,38 @@ router.get('/orders', authenticateAdmin, async (req: Request, res: Response) => 
         ROUND(CAST(COUNT(CASE WHEN status = 'completed' OR status = 'delivered' THEN 1 END) AS FLOAT) / 
               NULLIF(COUNT(*), 0) * 100, 2) as fulfillment_rate
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
     `, [dateRange.start, dateRange.end]);
 
     // Daily order trend
     const dailyOrders = await db.all(`
       SELECT 
-        DATE(created_at) as date,
+        created_at::date as date,
         COUNT(*) as total,
         COUNT(CASE WHEN status = 'completed' OR status = 'delivered' THEN 1 END) as completed,
         COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
-      GROUP BY DATE(created_at)
+      WHERE created_at::date BETWEEN $1 AND $2
+      GROUP BY created_at::date
       ORDER BY date
     `, [dateRange.start, dateRange.end]);
 
     // Average processing time
     const processingTime = await db.get(`
       SELECT 
-        AVG(JULIANDAY(updated_at) - JULIANDAY(created_at)) * 24 as avg_hours_to_process
+        AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 3600) as avg_hours_to_process
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
         AND status IN ('completed', 'delivered', 'shipped')
     `, [dateRange.start, dateRange.end]);
 
     // Orders by hour of day
     const ordersByHour = await db.all(`
       SELECT 
-        CAST(strftime('%H', created_at) AS INTEGER) as hour,
+        EXTRACT(HOUR FROM created_at) as hour,
         COUNT(*) as count
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE created_at::date BETWEEN $1 AND $2
       GROUP BY hour
       ORDER BY hour
     `, [dateRange.start, dateRange.end]);
@@ -305,7 +305,7 @@ router.get('/orders', authenticateAdmin, async (req: Request, res: Response) => 
     // Orders by day of week
     const ordersByDay = await db.all(`
       SELECT 
-        CASE CAST(strftime('%w', created_at) AS INTEGER)
+        CASE EXTRACT(DOW FROM created_at)
           WHEN 0 THEN 'Sunday'
           WHEN 1 THEN 'Monday'
           WHEN 2 THEN 'Tuesday'
@@ -316,9 +316,9 @@ router.get('/orders', authenticateAdmin, async (req: Request, res: Response) => 
         END as day,
         COUNT(*) as count
       FROM orders
-      WHERE DATE(created_at) BETWEEN ? AND ?
-      GROUP BY strftime('%w', created_at)
-      ORDER BY CAST(strftime('%w', created_at) AS INTEGER)
+      WHERE created_at::date BETWEEN $1 AND $2
+      GROUP BY EXTRACT(DOW FROM created_at)
+      ORDER BY EXTRACT(DOW FROM created_at)
     `, [dateRange.start, dateRange.end]);
 
     res.json({
@@ -353,18 +353,18 @@ router.get('/customers', authenticateAdmin, async (req: Request, res: Response) 
     const customerSummary = await db.get(`
       SELECT 
         COUNT(*) as total_customers,
-        COUNT(CASE WHEN DATE(created_at) BETWEEN ? AND ? THEN 1 END) as new_customers
+        COUNT(CASE WHEN created_at::date BETWEEN $1 AND $2 THEN 1 END) as new_customers
       FROM users
     `, [dateRange.start, dateRange.end]);
 
     // Daily new customers
     const dailyNewCustomers = await db.all(`
       SELECT 
-        DATE(created_at) as date,
+        created_at::date as date,
         COUNT(*) as count
       FROM users
-      WHERE DATE(created_at) BETWEEN ? AND ?
-      GROUP BY DATE(created_at)
+      WHERE created_at::date BETWEEN $1 AND $2
+      GROUP BY created_at::date
       ORDER BY date
     `, [dateRange.start, dateRange.end]);
 
@@ -378,7 +378,7 @@ router.get('/customers', authenticateAdmin, async (req: Request, res: Response) 
         COALESCE(SUM(o.total_amount), 0) as total_spent
       FROM users u
       LEFT JOIN orders o ON o.user_id = u.id AND o.status != 'cancelled'
-      WHERE DATE(o.created_at) BETWEEN ? AND ?
+      WHERE o.created_at::date BETWEEN $1 AND $2
       GROUP BY u.id
       ORDER BY total_spent DESC
       LIMIT 10
@@ -391,11 +391,11 @@ router.get('/customers', authenticateAdmin, async (req: Request, res: Response) 
       FROM (
         SELECT user_id, COUNT(*) as order_count
         FROM orders
-        WHERE DATE(created_at) BETWEEN ? AND ?
+        WHERE created_at::date BETWEEN $1 AND $2
           AND status != 'cancelled'
         GROUP BY user_id
-        HAVING order_count > 1
-      )
+        HAVING COUNT(*) > 1
+      ) as repeat_orders
     `, [dateRange.start, dateRange.end]);
 
     res.json({
