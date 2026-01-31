@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert, Platform, Image, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Platform, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import db from '@/src/database/db';
+import { useRouter } from 'expo-router';
+import { cartAPI, ordersAPI } from '@/src/services/api';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
 import { RESPONSIVE_FONT, RESPONSIVE_SPACING, RESPONSIVE_DIMENSION, getScreenPadding } from '@/src/constants/responsive';
 
@@ -17,12 +19,18 @@ interface CartItem {
   price: number;
   quantity: number;
   size: string;
+  discounted_price?: number;
+  image_url?: string;
 }
 
 export default function CartScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [cartFromApi, setCartFromApi] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -31,11 +39,36 @@ export default function CartScreen() {
   );
 
   const loadCart = async () => {
+    setLoading(true);
     try {
+      // 1) Try backend API first (logged-in user – source of truth for add-to-cart from product detail)
+      const apiResponse = await cartAPI.get();
+      if (apiResponse?.success && apiResponse.cart) {
+        const items = (apiResponse.cart.items || []) as any[];
+        if (items.length > 0) {
+        const mapped: CartItem[] = items.map((item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
+          name: item.name,
+          price: item.discounted_price ?? item.price,
+          quantity: item.quantity,
+          size: item.size ?? 'M',
+          image_url: item.image_url,
+        }));
+        setCartItems(mapped);
+        setTotalPrice(apiResponse.cart.subtotal ?? mapped.reduce((sum, i) => sum + i.price * i.quantity, 0));
+          setLoading(false);
+          return;
+        }
+        setCartFromApi(true);
+      }
+      setCartFromApi(false);
+
+      // 2) Fallback: local SQLite (offline / no token)
       if (Platform.OS === 'web' || !db) {
-        // Mock cart data for web
         setCartItems([]);
         setTotalPrice(0);
+        setLoading(false);
         return;
       }
 
@@ -44,29 +77,54 @@ export default function CartScreen() {
         FROM cart c
         JOIN products p ON c.product_id = p.id
       `);
-      setCartItems(result as CartItem[]);
-
-      const total = (result as CartItem[]).reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      );
-      setTotalPrice(total);
+      const localItems = (result || []) as CartItem[];
+      setCartItems(localItems);
+      setTotalPrice(localItems.reduce((sum, item) => sum + item.price * item.quantity, 0));
+      setCartFromApi(false);
     } catch (error) {
       console.error('Error loading cart:', error);
+      if (Platform.OS !== 'web' && db) {
+        try {
+          const result = await db.getAllAsync(`
+            SELECT c.id, c.product_id, p.name, p.price, c.quantity, c.size
+            FROM cart c
+            JOIN products p ON c.product_id = p.id
+          `);
+          const localItems = (result || []) as CartItem[];
+          setCartItems(localItems);
+          setTotalPrice(localItems.reduce((sum, item) => sum + item.price * item.quantity, 0));
+          setCartFromApi(false);
+        } catch (e) {
+          setCartItems([]);
+          setTotalPrice(0);
+        }
+      } else {
+        setCartItems([]);
+        setTotalPrice(0);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRemoveItem = async (cartId: number) => {
     try {
+      // Try API first (if user is logged in, cart is on backend)
+      await cartAPI.removeItem(cartId);
+      await loadCart();
+      Alert.alert('Success', 'Item removed from cart');
+    } catch {
       if (Platform.OS === 'web' || !db) {
         Alert.alert('Web Mode', 'Database operations not available on web');
         return;
       }
-      await db.runAsync('DELETE FROM cart WHERE id = ?', [cartId]);
-      loadCart();
-      Alert.alert('Success', 'Item removed from cart');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to remove item');
+      try {
+        await db.runAsync('DELETE FROM cart WHERE id = ?', [cartId]);
+        await loadCart();
+        Alert.alert('Success', 'Item removed from cart');
+      } catch (error) {
+        Alert.alert('Error', 'Failed to remove item');
+      }
     }
   };
 
@@ -76,30 +134,71 @@ export default function CartScreen() {
       return;
     }
 
+    setCheckoutLoading(true);
     try {
-      // Create order
+      // When cart was loaded from API (logged-in user), create order on backend and clear API cart
+      if (cartFromApi) {
+        const orderData = {
+          items: cartItems.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+          delivery_address: 'Default Address',
+          city: 'Default City',
+          postal_code: '10001',
+          payment_method: 'cash-on-delivery',
+          notes: undefined,
+        };
+        const apiResponse = await ordersAPI.create(orderData);
+        const orderId = apiResponse.order?.id || apiResponse.orderId;
+        await cartAPI.clear();
+        setCartItems([]);
+        setTotalPrice(0);
+        setCartFromApi(false);
+        setCheckoutLoading(false);
+        router.push({
+          pathname: '/order-success',
+          params: { orderId: String(orderId ?? ''), total: String(totalPrice), paymentMethod: 'Cash on Delivery', items: cartItems.map((i) => i.name).join(', ') },
+        });
+        return;
+      }
+
+      // Fallback: local DB (offline / no token). Skip on web where db is unavailable.
+      if (Platform.OS === 'web' || !db) {
+        Alert.alert('Not available', 'Please log in to place an order from cart.');
+        setCheckoutLoading(false);
+        return;
+      }
+
       const orderResult = await db.runAsync(
         'INSERT INTO orders (user_id, total_amount, status, delivery_address) VALUES (?, ?, ?, ?)',
         [1, totalPrice, 'pending', 'Default Address']
       );
-
-      // Add order items
       for (const item of cartItems) {
         await db.runAsync(
           'INSERT INTO order_items (order_id, product_id, quantity, size, price) VALUES (?, ?, ?, ?, ?)',
           [orderResult.lastInsertRowId, item.product_id, item.quantity, item.size, item.price]
         );
       }
-
-      // Clear cart
       await db.runAsync('DELETE FROM cart');
       setCartItems([]);
       setTotalPrice(0);
+      setCheckoutLoading(false);
       Alert.alert('Success', 'Order placed successfully!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to place order');
+    } catch (error: any) {
+      setCheckoutLoading(false);
+      const msg = error.response?.data?.message || error.message || 'Failed to place order';
+      Alert.alert('Error', msg);
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading cart...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -154,8 +253,16 @@ export default function CartScreen() {
               <Text style={styles.totalValue}>${(totalPrice + 10).toFixed(2)}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
-            <Text style={styles.checkoutButtonText}>Checkout</Text>
+          <TouchableOpacity
+            style={styles.checkoutButton}
+            onPress={handleCheckout}
+            disabled={checkoutLoading}
+          >
+            {checkoutLoading ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <Text style={styles.checkoutButtonText}>Checkout</Text>
+            )}
           </TouchableOpacity>
         </View>
       )}
@@ -171,6 +278,17 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: SCREEN_PADDING,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SCREEN_PADDING,
+  },
+  loadingText: {
+    marginTop: RESPONSIVE_SPACING.md,
+    fontSize: RESPONSIVE_FONT.sm,
+    color: COLORS.mediumGray,
   },
   header: {
     paddingVertical: RESPONSIVE_SPACING.lg,
