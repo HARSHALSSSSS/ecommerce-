@@ -18,7 +18,9 @@ import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
 import { RESPONSIVE_FONT } from '@/src/constants/responsive';
 import { returnsAPI } from '@/src/services/api';
 
-const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
+const API_URL = process.env.NODE_ENV === 'production'
+  ? 'https://ecommerce-4ifc.onrender.com/api'
+  : (Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api');
 
 interface ReturnReason {
   code: string;

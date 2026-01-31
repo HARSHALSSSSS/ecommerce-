@@ -3,27 +3,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-// Backend API URL - automatically detect platform and connection type
-const getApiUrl = () => {
-  // For Expo Go on real device, use the debuggerHost to get the computer's IP
-  const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
-  
-  if (debuggerHost) {
-    // Extract IP from debuggerHost (format: "192.168.x.x:8081")
-    const hostIp = debuggerHost.split(':')[0];
-    return `http://${hostIp}:5000/api`;
-  }
-  
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:5000/api'; // Android emulator fallback
-  } else if (Platform.OS === 'ios') {
-    return 'http://localhost:5000/api'; // iOS simulator
-  } else {
-    return 'http://localhost:5000/api'; // Web/other
-  }
-};
 
-const API_URL = getApiUrl();
+// Use deployed backend URL in production, dynamic detection in development
+const API_URL = process.env.NODE_ENV === 'production'
+  ? 'https://ecommerce-4ifc.onrender.com/api'
+  : (() => {
+      // For Expo Go on real device, use the debuggerHost to get the computer's IP
+      const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+      if (debuggerHost) {
+        // Extract IP from debuggerHost (format: "192.168.x.x:8081")
+        const hostIp = debuggerHost.split(':')[0];
+        return `http://${hostIp}:5000/api`;
+      }
+      if (Platform.OS === 'android') {
+        return 'http://10.0.2.2:5000/api'; // Android emulator fallback
+      } else if (Platform.OS === 'ios') {
+        return 'http://localhost:5000/api'; // iOS simulator
+      } else {
+        return 'http://localhost:5000/api'; // Web/other
+      }
+    })();
 console.log('🌐 API URL:', API_URL); // Log the API URL for debugging
 
 const api = axios.create({
@@ -192,7 +191,7 @@ export const cartAPI = {
     }
   },
 
-  addItem: async (productId: number, quantity: number = 1) => {
+  addItem: async (productId: number, quantity: number = 1,size?: string) => {
     const response = await api.post('/cart/add', { product_id: productId, quantity });
     return response.data;
   },

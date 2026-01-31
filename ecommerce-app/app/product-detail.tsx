@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { productsAPI } from '@/src/services/api';
+import { productsAPI, cartAPI, activityAPI } from '@/src/services/api';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
 import { validateImageUrl } from '@/src/utils/imageCache';
 
@@ -94,22 +94,21 @@ export default function ProductDetailScreen() {
   };
 
   const handleAddToCart = async () => {
-    if (!product) return;
-    try {
-      if (Platform.OS === 'web' || !db) {
-        Alert.alert('Web Mode', 'Database operations not available on web');
-        return;
-      }
-      await db.runAsync(
-        'INSERT INTO cart (product_id, quantity, size) VALUES (?, ?, ?)',
-        [product.id, quantity, selectedSize]
-      );
+  if (!product) return;
+  
+  try {
+    const result = await cartAPI.addItem(product.id, quantity, selectedSize);
+    
+    if (result.success) {
       Alert.alert('Success', 'Product added to cart!');
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      Alert.alert('Error', 'Failed to add product to cart');
+    } else {
+      Alert.alert('Error', result.message || 'Failed to add to cart');
     }
-  };
+  } catch (error) {
+    console.error('Error adding to cart:', error);
+    Alert.alert('Error', 'Failed to add product to cart');
+  }
+};
 
   const handleBuyNow = async () => {
     if (!product) return;
