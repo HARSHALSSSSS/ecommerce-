@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx vite build ",
+    "build": "node ./node_modules/vite/bin/vite.js build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -25,10 +25,10 @@
     "react-select": "^5.8.0",
     "react-table": "^7.8.0",
     "recharts": "^2.10.3",
-    "zustand": "^4.4.2",
-    "vite": "^5.0.8"
+    "zustand": "^4.4.2"
   },
   "devDependencies": {
+    "vite": "^5.0.8",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
