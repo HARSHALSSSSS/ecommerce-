@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
+import { RESPONSIVE_FONT, RESPONSIVE_SPACING, RESPONSIVE_DIMENSION } from '@/src/constants/responsive';
 
 export default function OrderSuccessScreen() {
   const router = useRouter();
@@ -146,12 +147,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: RESPONSIVE_SPACING.lg,
   },
   successContainer: {
     alignItems: 'center',
-    paddingVertical: SPACING.xl,
-    marginBottom: SPACING.lg,
+    paddingVertical: RESPONSIVE_SPACING.xl,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   successCircle: {
     width: 100,
@@ -160,27 +161,27 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   successTitle: {
-    fontSize: 24,
+    fontSize: RESPONSIVE_FONT.xxl,
     fontWeight: 'bold',
     color: COLORS.dark,
-    marginBottom: SPACING.sm,
+    marginBottom: RESPONSIVE_SPACING.sm,
     textAlign: 'center',
   },
   successSubtitle: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     color: COLORS.mediumGray,
     textAlign: 'center',
   },
   detailsSection: {
-    marginBottom: SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   detailCard: {
     backgroundColor: '#FFF5F0',
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
+    borderRadius: RESPONSIVE_DIMENSION.cardBorderRadius,
+    padding: RESPONSIVE_SPACING.lg,
     borderLeftWidth: 4,
     borderLeftColor: COLORS.primary,
   },
@@ -188,15 +189,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.md,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     color: COLORS.mediumGray,
     fontWeight: '500',
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     fontWeight: 'bold',
     color: COLORS.dark,
   },
@@ -208,31 +209,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.md,
-    gap: SPACING.sm,
+    paddingHorizontal: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.sm,
+    borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
+    gap: RESPONSIVE_SPACING.sm,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.primary,
     fontWeight: '600',
   },
   timelineSection: {
-    marginBottom: SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: RESPONSIVE_FONT.lg,
     fontWeight: 'bold',
     color: COLORS.dark,
-    marginBottom: SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   timeline: {
-    marginLeft: SPACING.lg,
+    marginLeft: RESPONSIVE_SPACING.lg,
   },
   timelineItem: {
     flexDirection: 'row',
-    marginBottom: SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   timelineCircle: {
     width: 32,
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8E8E8',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.lg,
+    marginRight: RESPONSIVE_SPACING.lg,
     marginTop: -6,
   },
   timelineActive: {
@@ -257,13 +258,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   timelineTitle: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     fontWeight: '600',
     color: COLORS.dark,
-    marginBottom: SPACING.xs,
+    marginBottom: RESPONSIVE_SPACING.xs,
   },
   timelineSubtitle: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.mediumGray,
   },
   timelineLine: {
@@ -271,49 +272,53 @@ const styles = StyleSheet.create({
     height: 30,
     backgroundColor: '#E8E8E8',
     marginLeft: 15,
-    marginBottom: SPACING.md,
+    marginBottom: RESPONSIVE_SPACING.md,
   },
   infoBox: {
     flexDirection: 'row',
     backgroundColor: '#FFF5F0',
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    gap: SPACING.md,
-    marginBottom: SPACING.lg,
+    borderRadius: RESPONSIVE_DIMENSION.cardBorderRadius,
+    padding: RESPONSIVE_SPACING.lg,
+    gap: RESPONSIVE_SPACING.md,
+    marginBottom: RESPONSIVE_SPACING.lg,
     alignItems: 'flex-start',
   },
   infoText: {
-    fontSize: 13,
+    fontSize: RESPONSIVE_FONT.sm,
     color: COLORS.dark,
     flex: 1,
     lineHeight: 20,
   },
   buttonContainer: {
-    gap: SPACING.md,
-    marginBottom: SPACING.lg,
+    gap: RESPONSIVE_SPACING.md,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   continueButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: SPACING.lg,
+    borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
+    paddingVertical: RESPONSIVE_SPACING.lg,
     alignItems: 'center',
+    minHeight: RESPONSIVE_DIMENSION.buttonHeight,
+    justifyContent: 'center',
   },
   continueButtonText: {
     color: COLORS.white,
-    fontSize: 16,
+    fontSize: RESPONSIVE_FONT.lg,
     fontWeight: 'bold',
   },
   trackButton: {
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: SPACING.lg,
+    borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
+    paddingVertical: RESPONSIVE_SPACING.lg,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: COLORS.primary,
+    minHeight: RESPONSIVE_DIMENSION.buttonHeight,
+    justifyContent: 'center',
   },
   trackButtonText: {
     color: COLORS.primary,
-    fontSize: 16,
+    fontSize: RESPONSIVE_FONT.lg,
     fontWeight: 'bold',
   },
 });

@@ -18,9 +18,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { productsAPI } from '@/src/services/api';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
+import { RESPONSIVE_FONT, RESPONSIVE_SPACING, RESPONSIVE_DIMENSION, getScreenPadding } from '@/src/constants/responsive';
 
 const { width } = Dimensions.get('window');
-const PRODUCT_WIDTH = (width - SPACING.lg * 2 - SPACING.md) / 2;
+const SCREEN_PADDING = getScreenPadding();
+const PRODUCT_WIDTH = RESPONSIVE_DIMENSION.productCardWidth;
 
 interface Product {
   id: number;
@@ -275,7 +277,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: RESPONSIVE_FONT.xl,
     fontWeight: '700',
     color: COLORS.dark,
     textTransform: 'capitalize',
@@ -293,18 +295,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     marginTop: 2,
-    gap: SPACING.sm,
+    gap: RESPONSIVE_SPACING.sm,
   },
   productCard: {
     width: PRODUCT_WIDTH,
-    marginBottom: 6,
+    marginBottom: RESPONSIVE_SPACING.sm,
   },
   productImage: {
     width: '100%',
-    height: 180,
+    height: RESPONSIVE_DIMENSION.productImageHeight,
     backgroundColor: COLORS.lightGray,
-    borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.md,
+    borderRadius: RESPONSIVE_DIMENSION.productImageBorderRadius,
+    marginBottom: RESPONSIVE_SPACING.md,
     overflow: 'hidden',
   },
   productImageContent: {
@@ -338,21 +340,21 @@ const styles = StyleSheet.create({
   },
   ratingContainer: {
     flexDirection: 'row',
-    gap: SPACING.xs,
-    marginBottom: SPACING.sm,
+    gap: RESPONSIVE_SPACING.xs,
+    marginBottom: RESPONSIVE_SPACING.sm,
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   price: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.base,
     fontWeight: '700',
     color: COLORS.primary,
-    marginRight: SPACING.sm,
+    marginRight: RESPONSIVE_SPACING.sm,
   },
   originalPrice: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.mediumGray,
     textDecorationLine: 'line-through',
   },
@@ -364,7 +366,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: RESPONSIVE_FONT.lg,
     color: COLORS.mediumGray,
     fontWeight: '500',
   },
@@ -376,10 +378,10 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     color: COLORS.mediumGray,
     fontWeight: '500',
-    marginTop: SPACING.md,
+    marginTop: RESPONSIVE_SPACING.md,
   },
   searchModalContainer: {
     flex: 1,
@@ -388,33 +390,35 @@ const styles = StyleSheet.create({
   searchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
-    gap: SPACING.md,
+    gap: RESPONSIVE_SPACING.md,
+    minHeight: 56,
   },
   searchInputModal: {
     flex: 1,
-    fontSize: 16,
+    fontSize: RESPONSIVE_FONT.lg,
     color: COLORS.dark,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.sm,
     backgroundColor: COLORS.lightGray,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: RESPONSIVE_DIMENSION.inputBorderRadius,
+    minHeight: 44,
   },
   searchResultsContainer: {
     flex: 1,
     backgroundColor: COLORS.white,
   },
   searchResultsContent: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.sm,
   },
   searchProductsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: SPACING.sm,
+    gap: RESPONSIVE_SPACING.sm,
   },
 });

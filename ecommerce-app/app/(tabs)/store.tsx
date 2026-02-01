@@ -16,10 +16,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { productsAPI, storesAPI } from '@/src/services/api';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
+import { RESPONSIVE_FONT, RESPONSIVE_SPACING, RESPONSIVE_DIMENSION, getScreenPadding } from '@/src/constants/responsive';
 import { preloadImages, validateImageUrl } from '@/src/utils/imageCache';
 
 const { width } = Dimensions.get('window');
-const PRODUCT_WIDTH = (width - SPACING.lg * 2 - SPACING.md) / 2;
+const SCREEN_PADDING = getScreenPadding();
+const PRODUCT_WIDTH = RESPONSIVE_DIMENSION.productCardWidth;
 
 interface Store {
   id: number;
@@ -344,23 +346,23 @@ const styles = StyleSheet.create({
     marginRight: SPACING.lg,
   },
   storeName: {
-    fontSize: 16,
+    fontSize: RESPONSIVE_FONT.lg,
     fontWeight: '700',
     color: COLORS.dark,
   },
   storeLocation: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.primary,
-    marginTop: SPACING.xs,
+    marginTop: RESPONSIVE_SPACING.xs,
   },
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingHorizontal: RESPONSIVE_SPACING.lg,
+    paddingVertical: RESPONSIVE_SPACING.lg,
     backgroundColor: COLORS.gray,
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: RESPONSIVE_SPACING.lg,
     borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
     alignItems: 'center',
   },
   statItem: {
@@ -369,15 +371,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     fontWeight: '700',
     color: COLORS.dark,
-    marginTop: SPACING.xs,
+    marginTop: RESPONSIVE_SPACING.xs,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.mediumGray,
-    marginTop: SPACING.xs,
+    marginTop: RESPONSIVE_SPACING.xs,
   },
   statDivider: {
     width: 1,
@@ -386,24 +388,26 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.lg,
-    gap: SPACING.md,
+    paddingHorizontal: RESPONSIVE_SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
+    gap: RESPONSIVE_SPACING.md,
   },
   tab: {
     flex: 1,
-    paddingVertical: SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
     alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   tabActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     fontWeight: '600',
     color: COLORS.dark,
   },
@@ -414,18 +418,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: RESPONSIVE_SPACING.lg,
   },
   productCard: {
     width: PRODUCT_WIDTH,
-    marginBottom: SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   productImage: {
     width: '100%',
-    height: 180,
+    height: RESPONSIVE_DIMENSION.productImageHeight,
     backgroundColor: COLORS.lightGray,
-    borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.md,
+    borderRadius: RESPONSIVE_DIMENSION.productImageBorderRadius,
+    marginBottom: RESPONSIVE_SPACING.md,
     overflow: 'hidden',
   },
   productImageContent: {
@@ -439,79 +443,79 @@ const styles = StyleSheet.create({
   },
   discountBadge: {
     position: 'absolute',
-    top: SPACING.md,
-    right: SPACING.md,
+    top: RESPONSIVE_SPACING.md,
+    right: RESPONSIVE_SPACING.md,
     backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    paddingHorizontal: RESPONSIVE_SPACING.sm,
+    paddingVertical: RESPONSIVE_SPACING.xs,
     borderRadius: BORDER_RADIUS.sm,
   },
   discountText: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.white,
     fontWeight: '700',
   },
   productName: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.sm,
     fontWeight: '600',
     color: COLORS.dark,
-    marginBottom: SPACING.sm,
+    marginBottom: RESPONSIVE_SPACING.sm,
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   price: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.base,
     fontWeight: '700',
     color: COLORS.primary,
-    marginRight: SPACING.sm,
+    marginRight: RESPONSIVE_SPACING.sm,
   },
   originalPrice: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.mediumGray,
     textDecorationLine: 'line-through',
   },
   testimoniContainer: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: RESPONSIVE_SPACING.lg,
   },
   testimoniCard: {
     backgroundColor: COLORS.gray,
-    padding: SPACING.lg,
+    padding: RESPONSIVE_SPACING.lg,
     borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.lg,
+    marginBottom: RESPONSIVE_SPACING.lg,
   },
   testimoniHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: RESPONSIVE_SPACING.md,
   },
   testimoniAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: RESPONSIVE_SPACING.md,
   },
   avatarText: {
     color: COLORS.white,
     fontWeight: '700',
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
   },
   testimoniName: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     fontWeight: '600',
     color: COLORS.dark,
   },
   testimoniRating: {
     flexDirection: 'row',
-    gap: SPACING.xs,
-    marginTop: SPACING.xs,
+    gap: RESPONSIVE_SPACING.xs,
+    marginTop: RESPONSIVE_SPACING.xs,
   },
   testimoniText: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.mediumGray,
     lineHeight: 18,
   },

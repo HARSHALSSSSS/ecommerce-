@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import db from '@/src/database/db';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
+import { RESPONSIVE_FONT, RESPONSIVE_SPACING, RESPONSIVE_DIMENSION } from '@/src/constants/responsive';
 import { ordersAPI, activityAPI } from '@/src/services/api';
 
 interface Product {
@@ -353,29 +354,29 @@ const styles = StyleSheet.create({
     width: 44,
   },
   section: {
-    marginBottom: SPACING.xl,
+    marginBottom: RESPONSIVE_SPACING.xl,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: RESPONSIVE_FONT.lg,
     fontWeight: '700',
     color: COLORS.dark,
-    marginBottom: SPACING.md,
+    marginBottom: RESPONSIVE_SPACING.md,
   },
   sectionHeaderWithButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: RESPONSIVE_SPACING.md,
   },
   editButton: {
-    fontSize: 13,
+    fontSize: RESPONSIVE_FONT.sm,
     color: COLORS.primary,
     fontWeight: '600',
   },
   orderCard: {
     backgroundColor: COLORS.lightGray,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
+    borderRadius: RESPONSIVE_DIMENSION.cardBorderRadius,
+    padding: RESPONSIVE_SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -383,33 +384,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: RESPONSIVE_SPACING.md,
   },
   productNameCheckout: {
-    fontSize: 14,
+    fontSize: RESPONSIVE_FONT.sm,
     fontWeight: '600',
     color: COLORS.dark,
     flex: 1,
   },
   quantityBadge: {
-    fontSize: 13,
+    fontSize: RESPONSIVE_FONT.sm,
     fontWeight: '600',
     color: COLORS.primary,
     backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    paddingHorizontal: RESPONSIVE_SPACING.sm,
+    paddingVertical: RESPONSIVE_SPACING.xs,
     borderRadius: BORDER_RADIUS.sm,
   },
   orderItemDetails: {
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    paddingTop: SPACING.md,
-    marginBottom: SPACING.md,
+    paddingTop: RESPONSIVE_SPACING.md,
+    marginBottom: RESPONSIVE_SPACING.md,
   },
   orderDetailLabel: {
-    fontSize: 12,
+    fontSize: RESPONSIVE_FONT.xs,
     color: COLORS.mediumGray,
-    marginBottom: SPACING.sm,
+    marginBottom: RESPONSIVE_SPACING.sm,
   },
   orderDetailValue: {
     fontWeight: '600',
