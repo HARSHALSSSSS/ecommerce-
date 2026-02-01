@@ -57,12 +57,13 @@ export default function CartScreen() {
         }));
         setCartItems(mapped);
         setTotalPrice(apiResponse.cart.subtotal ?? mapped.reduce((sum, i) => sum + i.price * i.quantity, 0));
+          setCartFromApi(true); // IMPORTANT: Set this BEFORE returning so checkout knows to use API
           setLoading(false);
           return;
         }
+        // No items in API cart, but still mark as API cart if user is logged in
         setCartFromApi(true);
       }
-      setCartFromApi(false);
 
       // 2) Fallback: local SQLite (offline / no token)
       if (Platform.OS === 'web' || !db) {

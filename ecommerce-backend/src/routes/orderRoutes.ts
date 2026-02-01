@@ -360,6 +360,9 @@ router.post('/', authenticateUser, async (req, res) => {
     const userId = req.user!.id;
     const { items, delivery_address, city, postal_code, payment_method, notes } = req.body;
 
+    console.log('📋 Create order request - User:', userId, 'Items:', items?.length);
+    console.log('📋 Order details:', { delivery_address, city, postal_code, payment_method });
+
     if (!items || !items.length) {
       return res.status(400).json({ success: false, message: 'Order items required' });
     }

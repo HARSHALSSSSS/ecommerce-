@@ -10,6 +10,8 @@ router.get('/', authenticateUser, async (req, res) => {
     const db = getDatabase();
     const userId = req.user!.id;
 
+    console.log('📦 Getting cart for user:', userId);
+
     const cartItems = await db.all(
       `SELECT c.id, c.quantity, p.id as product_id, p.name, p.price, p.discount_percent, 
               p.image_url, p.stock_quantity
@@ -18,6 +20,8 @@ router.get('/', authenticateUser, async (req, res) => {
        WHERE c.user_id = ?`,
       [userId]
     );
+
+    console.log('📦 Cart items found:', cartItems.length);
 
     // Calculate totals
     let subtotal = 0;
@@ -53,6 +57,8 @@ router.post('/add', authenticateUser, async (req, res) => {
     const userId = req.user!.id;
     const { product_id, quantity = 1 } = req.body;
 
+    console.log('🛒 Add to cart request - User:', userId, 'Product:', product_id, 'Qty:', quantity);
+
     if (!product_id) {
       return res.status(400).json({ success: false, message: 'Product ID is required' });
     }
@@ -60,8 +66,11 @@ router.post('/add', authenticateUser, async (req, res) => {
     // Check if product exists
     const product = await db.get('SELECT * FROM products WHERE id = ?', [product_id]);
     if (!product) {
+      console.log('🛒 Product not found:', product_id);
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
+
+    console.log('🛒 Product found:', product.name);
 
     // Check stock
     if (product.stock_quantity < quantity) {
@@ -85,12 +94,14 @@ router.post('/add', authenticateUser, async (req, res) => {
         'UPDATE cart SET quantity = ? WHERE id = ?',
         [newQuantity, existingItem.id]
       );
+      console.log('🛒 Updated cart item quantity to:', newQuantity);
     } else {
       // Add new item
       await db.run(
         'INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)',
         [userId, product_id, quantity]
       );
+      console.log('🛒 Added new item to cart');
     }
 
     res.json({ success: true, message: 'Added to cart' });
