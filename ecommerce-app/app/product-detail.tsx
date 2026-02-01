@@ -148,12 +148,12 @@ export default function ProductDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={[styles.header, { paddingTop: SPACING.md }]}>
-          <TouchableOpacity onPress={() => router.back()}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color={COLORS.dark} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Detail Product</Text>
-          <TouchableOpacity>
+          <TouchableOpacity style={styles.headerRightButton}>
             <Ionicons name="ellipsis-vertical" size={24} color={COLORS.dark} />
           </TouchableOpacity>
         </View>
@@ -322,13 +322,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
+    minHeight: 56,
+  },
+  headerBackButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.dark,
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerRightButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mainImageContainer: {
     paddingHorizontal: SPACING.lg,

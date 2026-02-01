@@ -171,11 +171,11 @@ export default function CategoryScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={[styles.containerScroll, { paddingTop: Math.max(insets.top - 12, 0) }]} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color={COLORS.dark} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{category === 'all' ? 'All Products' : category}</Text>
-          <TouchableOpacity onPress={() => setShowSearchModal(true)}>
+          <Text style={styles.headerTitle} numberOfLines={1}>{category === 'all' ? 'All Products' : category}</Text>
+          <TouchableOpacity style={styles.headerSearchButton} onPress={() => setShowSearchModal(true)}>
             <Ionicons name="search" size={24} color={COLORS.dark} />
           </TouchableOpacity>
         </View>
@@ -262,16 +262,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 0,
+    paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    marginBottom: 0,
+    marginBottom: SPACING.md,
+    minHeight: 56,
+  },
+  headerBackButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: COLORS.dark,
     textTransform: 'capitalize',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerSearchButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   productsGrid: {
     flexDirection: 'row',

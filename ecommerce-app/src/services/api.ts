@@ -233,7 +233,8 @@ export const ordersAPI = {
     payment_method: string;
     notes?: string;
   }) => {
-    const response = await api.post('/orders', orderData);
+    // Use longer timeout for order creation (60 seconds) - Render can be slow
+    const response = await api.post('/orders', orderData, { timeout: 60000 });
     return response.data;
   },
 
@@ -259,6 +260,12 @@ export const ordersAPI = {
 
   requestRefund: async (id: number, reason: string) => {
     const response = await api.post(`/orders/my-orders/${id}/refund-request`, { reason });
+    return response.data;
+  },
+  
+  // Get the most recent order for the user (useful to check if order was created after timeout)
+  getLatest: async () => {
+    const response = await api.get('/orders/my-orders', { params: { limit: 1 } });
     return response.data;
   },
 };

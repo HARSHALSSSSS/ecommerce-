@@ -1,4 +1,4 @@
-import { Dimensions, Platform } from 'react-native';
+import { Dimensions, Platform, PixelRatio } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,15 +18,19 @@ export const DEVICE = {
   isNotch: height > 800 && Platform.OS === 'ios',
 };
 
+// Normalize font size across different screen densities
+const fontScale = PixelRatio.getFontScale();
+const normalizedFontScale = fontScale > 1.3 ? 1.3 : fontScale; // Cap font scaling
+
 // Responsive font sizes
 export const RESPONSIVE_FONT = {
-  xs: width < 360 ? 10 : 11,
-  sm: width < 360 ? 12 : 13,
-  base: width < 360 ? 14 : 15,
-  lg: width < 360 ? 16 : 17,
-  xl: width < 360 ? 18 : 20,
-  xxl: width < 360 ? 22 : 24,
-  xxxl: width < 360 ? 28 : 32,
+  xs: Math.round((width < 360 ? 10 : 11) / normalizedFontScale),
+  sm: Math.round((width < 360 ? 12 : 13) / normalizedFontScale),
+  base: Math.round((width < 360 ? 14 : 15) / normalizedFontScale),
+  lg: Math.round((width < 360 ? 16 : 17) / normalizedFontScale),
+  xl: Math.round((width < 360 ? 18 : 20) / normalizedFontScale),
+  xxl: Math.round((width < 360 ? 22 : 24) / normalizedFontScale),
+  xxxl: Math.round((width < 360 ? 28 : 32) / normalizedFontScale),
 };
 
 // Responsive spacing
@@ -91,6 +95,16 @@ export const scale = (value: number) => {
   return (width / 375) * value; // Scale based on standard iPhone width
 };
 
+// Vertical scale for height-related values
+export const verticalScale = (value: number) => {
+  return (height / 812) * value; // Scale based on standard iPhone X height
+};
+
+// Moderate scale for values that shouldn't scale too much
+export const moderateScale = (value: number, factor = 0.5) => {
+  return value + (scale(value) - value) * factor;
+};
+
 // Get optimal product columns based on screen width
 export const getProductColumns = () => {
   if (width < 360) return 2;
@@ -104,3 +118,25 @@ export const getScreenPadding = () => {
   if (width < 410) return 16;
   return 20;
 };
+
+// Header height based on device
+export const getHeaderHeight = () => {
+  if (Platform.OS === 'ios') {
+    return height > 800 ? 56 : 48; // Taller for notched devices
+  }
+  return 56;
+};
+
+// Touch target size (minimum 44pt for accessibility)
+export const TOUCH_TARGET_SIZE = Math.max(44, scale(44));
+
+// Back button container style helper
+export const getBackButtonStyle = () => ({
+  width: 40,
+  height: 40,
+  justifyContent: 'center' as const,
+  alignItems: 'center' as const,
+  borderRadius: 20,
+  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+});
+

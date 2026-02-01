@@ -10,6 +10,8 @@ import {
   Alert,
   Platform,
   TextInput,
+  ActivityIndicator,
+  InteractionManager,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +35,7 @@ export default function CheckoutScreen() {
   const [deliveryAddress, setDeliveryAddress] = useState('123 Main Street, Apartment 4B');
   const [isEditing, setIsEditing] = useState(false);
   const [newAddress, setNewAddress] = useState(deliveryAddress);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   const productQty = Number(quantity) || 1;
   const productDiscount = Number(discount) || 0;
@@ -55,82 +58,92 @@ export default function CheckoutScreen() {
       Alert.alert('Error', 'Please select a payment method');
       return;
     }
+    
+    if (isPlacingOrder) return; // Prevent double-tap
+    setIsPlacingOrder(true);
 
-    try {
-      const paymentMethodName = paymentMethods.find(p => p.id === selectedPayment)?.name || 'Credit Card';
+    const paymentMethodName = paymentMethods.find(p => p.id === selectedPayment)?.name || 'Credit Card';
+    
+    // Generate a temporary order ID for immediate navigation
+    const tempOrderId = `ORD-${Date.now()}`;
+    
+    // Capture all values needed for background processing BEFORE navigation
+    const orderParams = {
+      productId: Number(productId),
+      qty: productQty,
+      address: newAddress || deliveryAddress,
+      payment: selectedPayment,
+      sizeNote: size ? `Size: ${size}` : undefined,
+      total: finalTotal,
+    };
+    
+    // Navigate to success page IMMEDIATELY - this is the FIRST thing that happens
+    router.replace({
+      pathname: '/order-success',
+      params: {
+        orderId: tempOrderId,
+        total: finalTotal,
+        paymentMethod: paymentMethodName,
+        items: productName as string,
+      },
+    });
 
-      // Create order via API
-      const orderData = {
-        items: [{ 
-          product_id: Number(productId), 
-          quantity: productQty 
-        }],
-        delivery_address: newAddress || deliveryAddress,
-        city: 'Default City',
-        postal_code: '10001',
-        payment_method: selectedPayment,
-        notes: size ? `Size: ${size}` : undefined,
-      };
-
-      console.log('Creating order with data:', orderData);
-      const apiResponse = await ordersAPI.create(orderData);
-      console.log('Order created:', apiResponse);
-
-      const orderId = apiResponse.order?.id || apiResponse.orderId || Math.floor(Math.random() * 100000) + 10000;
-
-      // Log activity
-      await activityAPI.logCheckout(orderId, parseFloat(finalTotal));
-
-      // Also save to local storage for offline access
+    // Use InteractionManager to defer ALL other work until after navigation animation completes
+    InteractionManager.runAfterInteractions(() => {
+      // Save order locally for offline access
       const newOrder = {
-        id: orderId,
+        id: tempOrderId,
         date: new Date().toLocaleString(),
         productName: productName,
-        quantity: productQty,
+        quantity: orderParams.qty,
         size: size || 'M',
         unitPrice: discountedPrice,
         subtotal: totalPrice.toFixed(2),
         shipping: shippingCost,
         tax: tax,
-        total: finalTotal,
+        total: orderParams.total,
         paymentMethod: paymentMethodName,
-        deliveryAddress: newAddress || deliveryAddress,
+        deliveryAddress: orderParams.address,
         status: 'Processing',
       };
 
-      const existingOrders = await AsyncStorage.getItem('orders');
-      const orders = existingOrders ? JSON.parse(existingOrders) : [];
-      orders.push(newOrder);
-      await AsyncStorage.setItem('orders', JSON.stringify(orders));
+      // Fire and forget - don't await
+      AsyncStorage.getItem('orders').then(existingOrders => {
+        const orders = existingOrders ? JSON.parse(existingOrders) : [];
+        orders.push(newOrder);
+        AsyncStorage.setItem('orders', JSON.stringify(orders)).catch(() => {});
+      }).catch(() => {});
 
-      console.log('Order saved locally:', newOrder);
+      // Create order on backend - fire and forget
+      const orderData = {
+        items: [{ product_id: orderParams.productId, quantity: orderParams.qty }],
+        delivery_address: orderParams.address,
+        city: 'Default City',
+        postal_code: '10001',
+        payment_method: orderParams.payment,
+        notes: orderParams.sizeNote,
+      };
 
-      // Navigate to success page
-      router.push({
-        pathname: '/order-success',
-        params: {
-          orderId: orderId,
-          total: finalTotal,
-          paymentMethod: paymentMethodName,
-          items: productName,
-        },
+      ordersAPI.create(orderData).then(apiResponse => {
+        const realOrderId = apiResponse.order?.id || apiResponse.orderId;
+        console.log('✅ Order created:', realOrderId);
+        
+        // Update local storage with real order ID
+        AsyncStorage.getItem('orders').then(existingOrders => {
+          const orders = existingOrders ? JSON.parse(existingOrders) : [];
+          const orderIndex = orders.findIndex((o: any) => o.id === tempOrderId);
+          if (orderIndex >= 0) {
+            orders[orderIndex].id = realOrderId;
+            orders[orderIndex].status = 'Confirmed';
+            AsyncStorage.setItem('orders', JSON.stringify(orders)).catch(() => {});
+          }
+        }).catch(() => {});
+
+        activityAPI.logCheckout(realOrderId, parseFloat(orderParams.total)).catch(() => {});
+      }).catch(error => {
+        console.error('Background order error:', error);
       });
-    } catch (error: any) {
-      console.error('Error placing order:', error);
-      let errorMessage = 'Failed to place order. Please try again.';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message === 'Network Error') {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
-      } else if (error.code === 'ECONNABORTED') {
-        errorMessage = 'Request timed out. The server may be starting up, please try again in a moment.';
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Please login to place an order.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      Alert.alert('Order Failed', errorMessage);
-    }
+    });
   };
 
   const handleAddressUpdate = () => {
@@ -148,11 +161,11 @@ export default function CheckoutScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color={COLORS.dark} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Checkout</Text>
-          <View style={{ width: 24 }} />
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Order Summary */}
@@ -283,8 +296,19 @@ export default function CheckoutScreen() {
 
       {/* Place Order Button */}
       <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
-          <Text style={styles.placeOrderButtonText}>Place Order</Text>
+        <TouchableOpacity 
+          style={[styles.placeOrderButton, isPlacingOrder && styles.placeOrderButtonDisabled]} 
+          onPress={handlePlaceOrder}
+          disabled={isPlacingOrder}
+        >
+          {isPlacingOrder ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.placeOrderButtonText}>Processing...</Text>
+            </View>
+          ) : (
+            <Text style={styles.placeOrderButtonText}>Place Order</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -309,11 +333,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
     marginBottom: SPACING.lg,
+    minHeight: 56,
+  },
+  headerBackButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: -SPACING.sm,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: COLORS.dark,
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 44,
   },
   section: {
     marginBottom: SPACING.xl,
@@ -558,6 +595,9 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  placeOrderButtonDisabled: {
+    opacity: 0.7,
   },
   placeOrderButtonText: {
     fontSize: 16,

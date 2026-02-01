@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Platform, Image, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Platform, Image, Dimensions, ActivityIndicator, InteractionManager } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -135,39 +135,63 @@ export default function CartScreen() {
       return;
     }
 
+    if (checkoutLoading) return; // Prevent double-tap
     setCheckoutLoading(true);
-    try {
-      // When cart was loaded from API (logged-in user), create order on backend and clear API cart
-      if (cartFromApi) {
+    
+    // When cart was loaded from API (logged-in user), create order on backend
+    if (cartFromApi) {
+      const tempOrderId = `ORD-${Date.now()}`;
+      const itemNames = cartItems.map((i) => i.name).join(', ');
+      const currentTotal = totalPrice;
+      const currentCartItems = [...cartItems]; // Copy for background processing
+      
+      // Clear cart UI immediately
+      setCartItems([]);
+      setTotalPrice(0);
+      setCartFromApi(false);
+      setCheckoutLoading(false);
+      
+      // Navigate to success IMMEDIATELY - use replace for faster transition
+      router.replace({
+        pathname: '/order-success',
+        params: { 
+          orderId: tempOrderId, 
+          total: String(currentTotal), 
+          paymentMethod: 'Cash on Delivery', 
+          items: itemNames,
+        },
+      });
+      
+      // Use InteractionManager to defer background work until navigation completes
+      InteractionManager.runAfterInteractions(() => {
         const orderData = {
-          items: cartItems.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+          items: currentCartItems.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
           delivery_address: 'Default Address',
           city: 'Default City',
           postal_code: '10001',
           payment_method: 'cash-on-delivery',
           notes: undefined,
         };
-        const apiResponse = await ordersAPI.create(orderData);
-        const orderId = apiResponse.order?.id || apiResponse.orderId;
-        await cartAPI.clear();
-        setCartItems([]);
-        setTotalPrice(0);
-        setCartFromApi(false);
-        setCheckoutLoading(false);
-        router.push({
-          pathname: '/order-success',
-          params: { orderId: String(orderId ?? ''), total: String(totalPrice), paymentMethod: 'Cash on Delivery', items: cartItems.map((i) => i.name).join(', ') },
+        
+        console.log('Creating cart order in background...');
+        ordersAPI.create(orderData).then(apiResponse => {
+          console.log('✅ Cart order created:', apiResponse.order?.id);
+          cartAPI.clear().catch(() => {});
+        }).catch(error => {
+          console.error('Background cart order error:', error);
         });
-        return;
-      }
+      });
+      return;
+    }
 
-      // Fallback: local DB (offline / no token). Skip on web where db is unavailable.
-      if (Platform.OS === 'web' || !db) {
-        Alert.alert('Not available', 'Please log in to place an order from cart.');
-        setCheckoutLoading(false);
-        return;
-      }
+    // Fallback: local DB (offline / no token). Skip on web where db is unavailable.
+    if (Platform.OS === 'web' || !db) {
+      Alert.alert('Not available', 'Please log in to place an order from cart.');
+      setCheckoutLoading(false);
+      return;
+    }
 
+    try {
       const orderResult = await db.runAsync(
         'INSERT INTO orders (user_id, total_amount, status, delivery_address) VALUES (?, ?, ?, ?)',
         [1, totalPrice, 'pending', 'Default Address']
