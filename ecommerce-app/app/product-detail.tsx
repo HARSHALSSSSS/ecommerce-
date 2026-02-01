@@ -18,7 +18,28 @@ import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
 import { RESPONSIVE_FONT, RESPONSIVE_SPACING, RESPONSIVE_DIMENSION } from '@/src/constants/responsive';
 import { validateImageUrl } from '@/src/utils/imageCache';
 
-const SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+// Category-specific size options
+const SIZE_OPTIONS: Record<string, string[]> = {
+  'Clothing': ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+  'Men\'s Clothing': ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  'Women\'s Clothing': ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+  'Kids Clothing': ['2T', '3T', '4T', '5T', '6', '7', '8', '10', '12'],
+  'Shoes': ['6', '7', '8', '9', '10', '11', '12'],
+  'Men\'s Shoes': ['7', '8', '9', '10', '11', '12', '13'],
+  'Women\'s Shoes': ['5', '6', '7', '8', '9', '10', '11'],
+  'Kids Shoes': ['10', '11', '12', '13', '1', '2', '3', '4'],
+  'Hats': ['S/M', 'L/XL', 'One Size'],
+  'Caps': ['One Size'],
+  'Accessories': ['One Size'],
+  'Jewelry': ['S', 'M', 'L', 'Adjustable'],
+  'Bags': ['Small', 'Medium', 'Large'],
+  'Home & Living': [], // No sizes for home items
+  'Furniture': [], // No sizes for furniture
+  'Electronics': [], // No sizes for electronics
+  'Books': [], // No sizes for books
+  'Beauty': ['50ml', '100ml', '250ml'], // For beauty products
+  'Default': ['S', 'M', 'L', 'XL'], // Fallback
+};
 
 interface Product {
   id: number;
@@ -28,6 +49,7 @@ interface Product {
   rating: number;
   description: string;
   image_url?: string;
+  category?: string;
 }
 
 export default function ProductDetailScreen() {
@@ -35,13 +57,44 @@ export default function ProductDetailScreen() {
   const { productId } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const [product, setProduct] = useState<Product | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string>('M');
+  const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [imageLoading, setImageLoading] = useState(true);
+
+  // Get sizes based on product category
+  const getSizesForCategory = (category?: string): string[] => {
+    if (!category) return SIZE_OPTIONS['Default'];
+    
+    // Check for exact match first
+    if (SIZE_OPTIONS[category]) {
+      return SIZE_OPTIONS[category];
+    }
+    
+    // Check for partial matches (case-insensitive)
+    const categoryLower = category.toLowerCase();
+    for (const key in SIZE_OPTIONS) {
+      if (key.toLowerCase().includes(categoryLower) || categoryLower.includes(key.toLowerCase())) {
+        return SIZE_OPTIONS[key];
+      }
+    }
+    
+    return SIZE_OPTIONS['Default'];
+  };
+
+  const availableSizes = product ? getSizesForCategory(product.category) : [];
 
   useEffect(() => {
     loadProduct();
   }, [productId]);
+
+  // Set default size when product or sizes change
+  useEffect(() => {
+    if (availableSizes.length > 0 && !selectedSize) {
+      // Set middle size as default, or first if there's only one
+      const defaultIndex = Math.floor(availableSizes.length / 2);
+      setSelectedSize(availableSizes[defaultIndex]);
+    }
+  }, [availableSizes, product]);
 
   // Refresh product when screen is focused to get latest price
   useFocusEffect(
@@ -67,8 +120,9 @@ export default function ProductDetailScreen() {
           rating: response.product.rating || 4.5,
           description: response.product.description || 'High quality product',
           image_url: response.product.image_url,
+          category: response.product.category || 'Default',
         };
-        console.log('✅ Product loaded from API:', apiProduct.name, 'Price:', apiProduct.price, 'Discount:', apiProduct.discount_percent);
+        console.log('✅ Product loaded from API:', apiProduct.name, 'Price:', apiProduct.price, 'Category:', apiProduct.category);
         setProduct(apiProduct);
       } else {
         console.warn('⚠️ API returned no product');
@@ -99,7 +153,9 @@ export default function ProductDetailScreen() {
     if (!product) return;
     
     try {
-      const result = await cartAPI.addItem(product.id, quantity, selectedSize);
+      // If no sizes available for this category, pass 'N/A' instead of empty string
+      const sizeToSend = availableSizes.length > 0 ? selectedSize : 'N/A';
+      const result = await cartAPI.addItem(product.id, quantity, sizeToSend);
       
       if (result.success) {
         Alert.alert('Success', 'Product added to cart!');
@@ -123,6 +179,9 @@ export default function ProductDetailScreen() {
   const handleBuyNow = async () => {
     if (!product) return;
     
+    // If no sizes available for this category, pass 'N/A' instead of empty string
+    const sizeToSend = availableSizes.length > 0 ? selectedSize : 'N/A';
+    
     // Navigate to checkout screen with product details
     router.push({
       pathname: '/checkout',
@@ -132,7 +191,7 @@ export default function ProductDetailScreen() {
         productPrice: product.price,
         discount: product.discount_percent,
         quantity: quantity,
-        size: selectedSize,
+        size: sizeToSend,
       },
     });
   };
@@ -244,35 +303,37 @@ export default function ProductDetailScreen() {
             )}
           </View>
 
-          <View style={styles.sizeSection}>
-            <View style={styles.sizeHeader}>
-              <Text style={styles.sizeLabel}>Size</Text>
-              <TouchableOpacity>
-                <Text style={styles.chooseVariant}>Choose Variant</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.sizeOptions}>
-              {SIZES.map((size) => (
-                <TouchableOpacity
-                  key={size}
-                  style={[
-                    styles.sizeButton,
-                    selectedSize === size && styles.sizeButtonSelected,
-                  ]}
-                  onPress={() => setSelectedSize(size)}
-                >
-                  <Text
-                    style={[
-                      styles.sizeButtonText,
-                      selectedSize === size && styles.sizeButtonTextSelected,
-                    ]}
-                  >
-                    {size}
-                  </Text>
+          {availableSizes.length > 0 && (
+            <View style={styles.sizeSection}>
+              <View style={styles.sizeHeader}>
+                <Text style={styles.sizeLabel}>Size</Text>
+                <TouchableOpacity>
+                  <Text style={styles.chooseVariant}>Choose Variant</Text>
                 </TouchableOpacity>
-              ))}
+              </View>
+              <View style={styles.sizeOptions}>
+                {availableSizes.map((size) => (
+                  <TouchableOpacity
+                    key={size}
+                    style={[
+                      styles.sizeButton,
+                      selectedSize === size && styles.sizeButtonSelected,
+                    ]}
+                    onPress={() => setSelectedSize(size)}
+                  >
+                    <Text
+                      style={[
+                        styles.sizeButtonText,
+                        selectedSize === size && styles.sizeButtonTextSelected,
+                      ]}
+                    >
+                      {size}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           <View style={styles.quantitySection}>
             <Text style={styles.quantityLabel}>Quantity</Text>
