@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import { initializeDatabase, closeDatabase } from './config/database';
+import { initializeDatabase, closeDatabase, getDatabase } from './config/database';
 import authRoutes from './routes/authRoutes';
 import productRoutes from './routes/productRoutes';
 import orderRoutes from './routes/orderRoutes';
@@ -46,7 +46,6 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Ensure DB is initialized before handling any request
 app.use(async (req, res, next) => {
   try {
-    const { getDatabase } = require('./config/database');
     getDatabase();
     next();
   } catch (err) {
