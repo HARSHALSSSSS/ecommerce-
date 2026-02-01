@@ -63,8 +63,8 @@ interface TicketStats {
   };
   by_priority: { priority: string; priority_label: string; priority_color: string; count: number }[];
   by_category: { category: string; category_label: string; count: number }[];
-  avg_resolution_hours: number;
-  avg_first_response_hours: number;
+  avg_resolution_hours: number | null;
+  avg_first_response_hours: number | null;
 }
 
 interface Agent {
@@ -351,16 +351,16 @@ const Tickets: React.FC = () => {
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Avg First Response</h3>
             <div className="text-xl font-bold text-gray-900">
-              {stats.avg_first_response_hours > 0 
-                ? `${stats.avg_first_response_hours.toFixed(1)} hours` 
+              {stats.avg_first_response_hours && stats.avg_first_response_hours > 0 
+                ? `${(stats.avg_first_response_hours).toFixed(1)} hours` 
                 : 'N/A'}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Avg Resolution Time</h3>
             <div className="text-xl font-bold text-gray-900">
-              {stats.avg_resolution_hours > 0 
-                ? `${stats.avg_resolution_hours.toFixed(1)} hours` 
+              {stats.avg_resolution_hours && stats.avg_resolution_hours > 0 
+                ? `${(stats.avg_resolution_hours).toFixed(1)} hours` 
                 : 'N/A'}
             </div>
           </div>

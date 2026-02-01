@@ -526,14 +526,14 @@ router.get('/admin/stats', authenticateAdmin, async (req: Request, res: Response
 
     // Average resolution time (in hours)
     const avgResolution = await db.get(`
-      SELECT AVG((JULIANDAY(closed_at) - JULIANDAY(created_at)) * 24) as avg_hours
+      SELECT AVG(EXTRACT(EPOCH FROM (closed_at - created_at)) / 3600) as avg_hours
       FROM tickets
       WHERE closed_at IS NOT NULL
     `);
 
     // First response time (in hours)
     const avgFirstResponse = await db.get(`
-      SELECT AVG((JULIANDAY(first_response_at) - JULIANDAY(created_at)) * 24) as avg_hours
+      SELECT AVG(EXTRACT(EPOCH FROM (first_response_at - created_at)) / 3600) as avg_hours
       FROM tickets
       WHERE first_response_at IS NOT NULL
     `);
