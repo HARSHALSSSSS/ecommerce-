@@ -196,6 +196,37 @@ export default function MarketingPreferencesScreen() {
           </Text>
         </View>
 
+        {/* Benefits Section */}
+        <View style={styles.benefitsSection}>
+          <Text style={styles.benefitsSectionTitle}>Why Subscribe?</Text>
+          <View style={styles.benefitsGrid}>
+            <View style={styles.benefitItem}>
+              <View style={[styles.benefitIcon, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="gift-outline" size={20} color="#F59E0B" />
+              </View>
+              <Text style={styles.benefitText}>Exclusive Deals</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <View style={[styles.benefitIcon, { backgroundColor: '#DBEAFE' }]}>
+                <Ionicons name="flash-outline" size={20} color="#3B82F6" />
+              </View>
+              <Text style={styles.benefitText}>Early Access</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <View style={[styles.benefitIcon, { backgroundColor: '#D1FAE5' }]}>
+                <Ionicons name="pricetag-outline" size={20} color="#10B981" />
+              </View>
+              <Text style={styles.benefitText}>Special Discounts</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <View style={[styles.benefitIcon, { backgroundColor: '#EDE9FE' }]}>
+                <Ionicons name="sparkles-outline" size={20} color="#8B5CF6" />
+              </View>
+              <Text style={styles.benefitText}>New Arrivals</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Communication Channels Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Communication Channels</Text>
@@ -542,5 +573,41 @@ const styles = StyleSheet.create({
     fontSize: RESPONSIVE_FONT.sm,
     color: COLORS.dark,
     lineHeight: 20,
+  },
+  benefitsSection: {
+    marginBottom: SPACING.lg,
+  },
+  benefitsSectionTitle: {
+    fontSize: RESPONSIVE_FONT.base,
+    fontWeight: '600',
+    color: COLORS.dark,
+    marginBottom: SPACING.md,
+  },
+  benefitsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  benefitItem: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  benefitIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  benefitText: {
+    flex: 1,
+    fontSize: RESPONSIVE_FONT.sm,
+    fontWeight: '500',
+    color: COLORS.dark,
   },
 });

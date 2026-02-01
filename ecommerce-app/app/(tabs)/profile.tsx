@@ -12,6 +12,7 @@ import {
   TextInput,
   Dimensions,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -477,8 +478,12 @@ export default function ProfileScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={[styles.containerScroll, { paddingTop: insets.top }]} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <ScrollView 
+        style={[styles.containerScroll, { paddingTop: insets.top }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Platform.OS === 'android' ? 100 : 80 }}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.profileContainer}>
@@ -586,7 +591,7 @@ export default function ProfileScreen() {
                 <Ionicons name="chevron-forward" size={20} color={COLORS.mediumGray} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/help-faq' as any)}>
                 <Ionicons name="lock-closed-outline" size={20} color={COLORS.dark} />
                 <Text style={styles.menuText}>Privacy & Security</Text>
                 <Ionicons name="chevron-forward" size={20} color={COLORS.mediumGray} />
@@ -598,7 +603,7 @@ export default function ProfileScreen() {
                 <Ionicons name="chevron-forward" size={20} color={COLORS.mediumGray} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/help-faq' as any)}>
                 <Ionicons name="help-circle-outline" size={20} color={COLORS.dark} />
                 <Text style={styles.menuText}>Help & FAQ</Text>
                 <Ionicons name="chevron-forward" size={20} color={COLORS.mediumGray} />

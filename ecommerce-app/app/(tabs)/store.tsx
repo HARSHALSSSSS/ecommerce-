@@ -207,8 +207,12 @@ export default function StoreScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={[styles.containerScroll, { paddingTop: insets.top }]} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <ScrollView 
+        style={[styles.containerScroll, { paddingTop: insets.top }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Platform.OS === 'android' ? 100 : 80 }}
+      >
         <View style={styles.storeHeader}>
         <View style={styles.storeLogo}>
           <Ionicons name="eye" size={32} color={COLORS.white} />

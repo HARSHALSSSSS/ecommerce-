@@ -130,6 +130,10 @@ export const getHeaderHeight = () => {
 // Touch target size (minimum 44pt for accessibility)
 export const TOUCH_TARGET_SIZE = Math.max(44, scale(44));
 
+// Bottom navigation bar safe padding (for Android gesture navigation)
+export const BOTTOM_TAB_HEIGHT = Platform.OS === 'android' ? 80 : 70;
+export const BOTTOM_SAFE_PADDING = Platform.OS === 'android' ? 24 : (height > 800 ? 34 : 0);
+
 // Back button container style helper
 export const getBackButtonStyle = () => ({
   width: 40,

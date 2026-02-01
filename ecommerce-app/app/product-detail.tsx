@@ -10,7 +10,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { productsAPI, cartAPI, activityAPI } from '@/src/services/api';
@@ -33,6 +33,7 @@ interface Product {
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { productId } = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('M');
   const [quantity, setQuantity] = useState(1);
@@ -294,7 +295,7 @@ export default function ProductDetailScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.buttonSection}>
+      <View style={[styles.buttonSection, { paddingBottom: Math.max(RESPONSIVE_SPACING.lg, Platform.OS === 'android' ? insets.bottom + 16 : insets.bottom) }]}>
         <TouchableOpacity style={styles.buyButton} onPress={handleBuyNow}>
           <Text style={styles.buyButtonText}>Buy Now</Text>
         </TouchableOpacity>

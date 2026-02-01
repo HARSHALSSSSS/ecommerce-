@@ -296,7 +296,7 @@ export default function CheckoutScreen() {
       </ScrollView>
 
       {/* Place Order Button */}
-      <View style={styles.bottomButtonContainer}>
+      <View style={[styles.bottomButtonContainer, { paddingBottom: Platform.OS === 'android' ? 24 : SPACING.md }]}>
         <TouchableOpacity 
           style={[styles.placeOrderButton, isPlacingOrder && styles.placeOrderButtonDisabled]} 
           onPress={handlePlaceOrder}

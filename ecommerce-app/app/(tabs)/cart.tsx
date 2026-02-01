@@ -263,7 +263,7 @@ export default function CartScreen() {
       </ScrollView>
 
       {cartItems.length > 0 && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: Math.max(RESPONSIVE_SPACING.lg, Platform.OS === 'android' ? 20 : 0) }]}>
           <View style={styles.priceBreakdown}>
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Subtotal</Text>

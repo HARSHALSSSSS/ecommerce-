@@ -385,9 +385,13 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['left', 'right']}>
       {!showSearchResults ? (
-        <ScrollView style={[styles.container, { paddingTop: insets.top }]} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={[styles.container, { paddingTop: insets.top }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: Platform.OS === 'android' ? 100 : 80 }}
+        >
           <View style={styles.header}>
             <View>
               <Text style={styles.greeting}>Hello</Text>

@@ -1,9 +1,15 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/src/constants/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  // Extra padding for Android gesture navigation bar
+  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 16) : insets.bottom;
+  
   return (
     <Tabs
       screenOptions={{
@@ -14,16 +20,20 @@ export default function TabLayout() {
           borderTopColor: COLORS.border,
           borderTopWidth: 1,
           backgroundColor: COLORS.white,
-          paddingBottom: 12,
+          paddingBottom: bottomPadding + 8,
           paddingTop: 8,
-          height: 70,
-          marginBottom: 8,
-          marginHorizontal: 0,
+          height: 60 + bottomPadding,
+          // Ensure tab bar is above Android navigation gestures
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: 2,
         },
       }}>
       <Tabs.Screen
