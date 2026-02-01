@@ -424,6 +424,7 @@ CREATE TABLE IF NOT EXISTS refunds (
   original_payment_method TEXT,
   transaction_id TEXT,
   bank_reference TEXT,
+  initiated_by INTEGER,
   processed_by INTEGER,
   processed_at TIMESTAMP,
   completed_at TIMESTAMP,

@@ -252,7 +252,7 @@ router.post('/admin', authenticateAdmin, async (req: Request, res: Response): Pr
     const result = await db.run(
       `INSERT INTO refunds (
         order_id, return_id, refund_number, amount, currency,
-        reason, payment_mode, notes, status, processed_by
+        reason, payment_mode, notes, status, initiated_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
       [order_id, return_id || null, refundNumber, amount, currency, reason, payment_mode, notes, admin.id]
     );
