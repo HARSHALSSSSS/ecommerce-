@@ -4,10 +4,13 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 
-// Use deployed backend URL in production, dynamic detection in development
-const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://ecommerce-4ifc.onrender.com/api'
-  : (() => {
+// ALWAYS use deployed backend URL for APK/production builds
+// For development with Expo Go, it will detect the local IP
+const isExpoGo = Constants.appOwnership === 'expo';
+const isDevelopment = __DEV__ && isExpoGo;
+
+const API_URL = isDevelopment
+  ? (() => {
       // For Expo Go on real device, use the debuggerHost to get the computer's IP
       const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
       if (debuggerHost) {
@@ -22,12 +25,14 @@ const API_URL = process.env.NODE_ENV === 'production'
       } else {
         return 'http://localhost:5000/api'; // Web/other
       }
-    })();
-console.log('🌐 API URL:', API_URL); // Log the API URL for debugging
+    })()
+  : 'https://ecommerce-4ifc.onrender.com/api'; // Production/APK always uses deployed backend
+
+console.log('🌐 API URL:', API_URL, '| isDev:', isDevelopment, '| isExpoGo:', isExpoGo);
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 15000, // Increased timeout for real device
+  timeout: 30000, // 30 seconds - Render free tier can have cold start delays
   headers: {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -40,20 +45,26 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('userToken');
+    console.log('📤 API Request:', config.method?.toUpperCase(), config.url, '| Token:', token ? 'Yes' : 'No');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => {
+    console.error('📤 Request Error:', error);
     return Promise.reject(error);
   }
 );
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('📥 API Response:', response.config.url, '| Status:', response.status);
+    return response;
+  },
   async (error) => {
+    console.error('📥 API Error:', error.config?.url, '| Status:', error.response?.status, '| Message:', error.message);
     if (error.response?.status === 401) {
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('user');

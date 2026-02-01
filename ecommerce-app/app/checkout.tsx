@@ -117,8 +117,19 @@ export default function CheckoutScreen() {
       });
     } catch (error: any) {
       console.error('Error placing order:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to place order. Please try again.';
-      Alert.alert('Error', errorMessage);
+      let errorMessage = 'Failed to place order. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message === 'Network Error') {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. The server may be starting up, please try again in a moment.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Please login to place an order.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      Alert.alert('Order Failed', errorMessage);
     }
   };
 

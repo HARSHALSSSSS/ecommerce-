@@ -94,21 +94,29 @@ export default function ProductDetailScreen() {
   };
 
   const handleAddToCart = async () => {
-  if (!product) return;
-  
-  try {
-    const result = await cartAPI.addItem(product.id, quantity, selectedSize);
+    if (!product) return;
     
-    if (result.success) {
-      Alert.alert('Success', 'Product added to cart!');
-    } else {
-      Alert.alert('Error', result.message || 'Failed to add to cart');
+    try {
+      const result = await cartAPI.addItem(product.id, quantity, selectedSize);
+      
+      if (result.success) {
+        Alert.alert('Success', 'Product added to cart!');
+      } else {
+        Alert.alert('Error', result.message || 'Failed to add to cart');
+      }
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      let errorMessage = 'Failed to add product to cart';
+      if (error.message === 'Network Error') {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Please login to add items to cart.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      Alert.alert('Cart Error', errorMessage);
     }
-  } catch (error) {
-    console.error('Error adding to cart:', error);
-    Alert.alert('Error', 'Failed to add product to cart');
-  }
-};
+  };
 
   const handleBuyNow = async () => {
     if (!product) return;
