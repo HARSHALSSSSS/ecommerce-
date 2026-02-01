@@ -538,6 +538,10 @@ router.get('/admin/stats', authenticateAdmin, async (req: Request, res: Response
       WHERE first_response_at IS NOT NULL
     `);
 
+    // Ensure values are numbers, not strings or null
+    const avgResolutionHours = avgResolution?.avg_hours ? Number(avgResolution.avg_hours) : 0;
+    const avgFirstResponseHours = avgFirstResponse?.avg_hours ? Number(avgFirstResponse.avg_hours) : 0;
+
     res.json({
       success: true,
       stats: {
@@ -552,8 +556,8 @@ router.get('/admin/stats', authenticateAdmin, async (req: Request, res: Response
           ...c,
           category_label: TICKET_CATEGORIES[c.category],
         })),
-        avg_resolution_hours: avgResolution?.avg_hours || 0,
-        avg_first_response_hours: avgFirstResponse?.avg_hours || 0,
+        avg_resolution_hours: avgResolutionHours,
+        avg_first_response_hours: avgFirstResponseHours,
       },
     });
   } catch (error) {

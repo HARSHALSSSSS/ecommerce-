@@ -351,17 +351,19 @@ const Tickets: React.FC = () => {
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Avg First Response</h3>
             <div className="text-xl font-bold text-gray-900">
-              {stats.avg_first_response_hours && stats.avg_first_response_hours > 0 
-                ? `${(stats.avg_first_response_hours).toFixed(1)} hours` 
-                : 'N/A'}
+              {(() => {
+                const value = Number(stats.avg_first_response_hours || 0);
+                return value > 0 ? `${value.toFixed(1)} hours` : 'N/A';
+              })()}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Avg Resolution Time</h3>
             <div className="text-xl font-bold text-gray-900">
-              {stats.avg_resolution_hours && stats.avg_resolution_hours > 0 
-                ? `${(stats.avg_resolution_hours).toFixed(1)} hours` 
-                : 'N/A'}
+              {(() => {
+                const value = Number(stats.avg_resolution_hours || 0);
+                return value > 0 ? `${value.toFixed(1)} hours` : 'N/A';
+              })()}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
