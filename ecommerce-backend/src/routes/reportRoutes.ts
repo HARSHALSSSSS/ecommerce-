@@ -50,7 +50,7 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
     const cacheKey = `sales_${dateRange.start}_${dateRange.end}`;
     const cached = await db.get(
       `SELECT report_data FROM report_cache 
-       WHERE report_type = 'sales' AND report_key = ? AND expires_at > datetime('now')`,
+       WHERE report_type = 'sales' AND report_key = ? AND expires_at > NOW()`,
       [cacheKey]
     );
 
@@ -108,6 +108,7 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
     // Sales by category
     const salesByCategory = await db.all(`
       SELECT 
+        c.id,
         c.name as category,
         COUNT(DISTINCT o.id) as orders,
         SUM(oi.quantity) as units_sold,
@@ -118,7 +119,7 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
       JOIN orders o ON o.id = oi.order_id
       WHERE o.created_at::date BETWEEN $1 AND $2
         AND o.status != 'cancelled'
-      GROUP BY c.id
+      GROUP BY c.id, c.name
       ORDER BY revenue DESC
     `, [dateRange.start, dateRange.end]);
 
@@ -157,9 +158,10 @@ router.get('/sales', authenticateAdmin, async (req: Request, res: Response) => {
 
     // Cache the report (expires in 1 hour)
     await db.run(
-      `INSERT OR REPLACE INTO report_cache (report_type, report_key, report_data, expires_at, generated_by)
-       VALUES ('sales', ?, ?, datetime('now', '+1 hour'), ?)`,
-      [cacheKey, JSON.stringify(reportData), (req as any).admin?.id]
+      `INSERT INTO report_cache (report_type, report_key, report_data, expires_at, generated_by)
+       VALUES (?, ?, ?, NOW() + INTERVAL '1 hour', ?)
+       ON CONFLICT (report_type, report_key) DO UPDATE SET report_data = EXCLUDED.report_data, expires_at = EXCLUDED.expires_at`,
+      ['sales', cacheKey, JSON.stringify(reportData), (req as any).admin?.id]
     );
 
     res.json({
@@ -214,6 +216,7 @@ router.get('/tax', authenticateAdmin, async (req: Request, res: Response) => {
     // Tax by category
     const taxByCategory = await db.all(`
       SELECT 
+        c.id,
         c.name as category,
         COUNT(DISTINCT o.id) as orders,
         COALESCE(SUM(o.tax_amount), 0) as tax_collected
@@ -223,7 +226,7 @@ router.get('/tax', authenticateAdmin, async (req: Request, res: Response) => {
       JOIN categories c ON c.id = p.category_id
       WHERE o.created_at::date BETWEEN $1 AND $2
         AND o.status NOT IN ('cancelled', 'refunded')
-      GROUP BY c.id
+      GROUP BY c.id, c.name
       ORDER BY tax_collected DESC
     `, [dateRange.start, dateRange.end]);
 
@@ -263,7 +266,7 @@ router.get('/orders', authenticateAdmin, async (req: Request, res: Response) => 
         COUNT(CASE WHEN status = 'shipped' THEN 1 END) as shipped_orders,
         COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_orders,
         COUNT(CASE WHEN status = 'refunded' THEN 1 END) as refunded_orders,
-        ROUND(CAST(COUNT(CASE WHEN status = 'completed' OR status = 'delivered' THEN 1 END) AS FLOAT) / 
+        ROUND(CAST(COUNT(CASE WHEN status = 'completed' OR status = 'delivered' THEN 1 END) AS NUMERIC) / 
               NULLIF(COUNT(*), 0) * 100, 2) as fulfillment_rate
       FROM orders
       WHERE created_at::date BETWEEN $1 AND $2
@@ -445,6 +448,7 @@ router.get('/inventory', authenticateAdmin, async (req: Request, res: Response) 
     // Inventory by category
     const inventoryByCategory = await db.all(`
       SELECT 
+        c.id,
         c.name as category,
         COUNT(p.id) as products,
         COALESCE(SUM(p.stock_quantity), 0) as total_units,
@@ -452,7 +456,7 @@ router.get('/inventory', authenticateAdmin, async (req: Request, res: Response) 
       FROM products p
       JOIN categories c ON c.id = p.category_id
       WHERE p.is_active = 1
-      GROUP BY c.id
+      GROUP BY c.id, c.name
       ORDER BY value DESC
     `);
 
