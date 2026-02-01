@@ -241,7 +241,17 @@ export default function CartScreen() {
           <View>
             {cartItems.map((item) => (
               <View key={item.id} style={styles.cartItem}>
-                <View style={styles.itemImage} />
+                {item.image_url ? (
+                  <Image
+                    source={{ uri: item.image_url }}
+                    style={styles.itemImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.itemImage, { backgroundColor: COLORS.lightGray, justifyContent: 'center', alignItems: 'center' }]}>
+                    <Ionicons name="image-outline" size={32} color={COLORS.mediumGray} />
+                  </View>
+                )}
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.itemSize}>Size: {item.size}</Text>
