@@ -4,6 +4,17 @@ import { authenticateAdmin, authenticateUser } from '../middleware/auth';
 
 const router = Router();
 
+// Helper: Safely parse JSON - handles both string and already-parsed objects (PostgreSQL JSONB)
+function safeJsonParse(value: any, defaultValue: any = []): any {
+  if (value === null || value === undefined) return defaultValue;
+  if (typeof value === 'object') return value; // Already parsed (PostgreSQL JSONB)
+  try {
+    return JSON.parse(value);
+  } catch {
+    return defaultValue;
+  }
+}
+
 // ========================================
 // RETURN REQUEST CONFIGURATION
 // ========================================
@@ -235,8 +246,8 @@ router.get('/my-returns', authenticateUser, async (req: Request, res: Response):
       reason_label: RETURN_REASON_CODES[r.reason_code]?.label || r.reason_code,
       action_label: REQUESTED_ACTIONS[r.requested_action] || r.requested_action,
       status_label: RETURN_STATUSES[r.status]?.label || r.status,
-      items: r.items ? JSON.parse(r.items) : [],
-      images: r.images ? JSON.parse(r.images) : [],
+      items: safeJsonParse(r.items, []),
+      images: safeJsonParse(r.images, []),
     }));
 
     res.json({ success: true, returns: formattedReturns });
@@ -297,8 +308,8 @@ router.get('/my-returns/:id', authenticateUser, async (req: Request, res: Respon
         reason_label: RETURN_REASON_CODES[returnRequest.reason_code]?.label || returnRequest.reason_code,
         action_label: REQUESTED_ACTIONS[returnRequest.requested_action] || returnRequest.requested_action,
         status_label: RETURN_STATUSES[returnRequest.status]?.label || returnRequest.status,
-        items: returnRequest.items ? JSON.parse(returnRequest.items) : [],
-        images: returnRequest.images ? JSON.parse(returnRequest.images) : [],
+        items: safeJsonParse(returnRequest.items, []),
+        images: safeJsonParse(returnRequest.images, []),
         timeline: timeline.map(e => ({
           ...e,
           new_status_label: RETURN_STATUSES[e.new_status]?.label || e.new_status,
@@ -388,8 +399,8 @@ router.get('/admin', authenticateAdmin, async (req: Request, res: Response): Pro
       reason_label: RETURN_REASON_CODES[r.reason_code]?.label || r.reason_code,
       action_label: REQUESTED_ACTIONS[r.requested_action] || r.requested_action,
       status_label: RETURN_STATUSES[r.status]?.label || r.status,
-      items: r.items ? JSON.parse(r.items) : [],
-      images: r.images ? JSON.parse(r.images) : [],
+      items: safeJsonParse(r.items, []),
+      images: safeJsonParse(r.images, []),
     }));
 
     res.json({
@@ -518,9 +529,9 @@ router.get('/admin/:id', authenticateAdmin, async (req: Request, res: Response):
         reason_label: RETURN_REASON_CODES[returnRequest.reason_code]?.label || returnRequest.reason_code,
         action_label: REQUESTED_ACTIONS[returnRequest.requested_action] || returnRequest.requested_action,
         status_label: RETURN_STATUSES[returnRequest.status]?.label || returnRequest.status,
-        items: returnRequest.items ? JSON.parse(returnRequest.items) : [],
-        images: returnRequest.images ? JSON.parse(returnRequest.images) : [],
-        order_items: returnRequest.order_items ? JSON.parse(returnRequest.order_items) : [],
+        items: safeJsonParse(returnRequest.items, []),
+        images: safeJsonParse(returnRequest.images, []),
+        order_items: safeJsonParse(returnRequest.order_items, []),
         timeline,
         refund,
         replacement,

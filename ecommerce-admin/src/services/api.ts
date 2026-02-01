@@ -193,12 +193,13 @@ export const customersAPI = {
 // Support Tickets API
 export const ticketsAPI = {
   getAll: (params?: { page?: number; limit?: number; status?: string; priority?: string }) =>
-    api.get('/admin/tickets', { params }),
-  getById: (id: number) => api.get(`/admin/tickets/${id}`),
+    api.get('/tickets/admin', { params }),
+  getById: (id: number) => api.get(`/tickets/admin/${id}`),
   update: (id: number, data: { status?: string; priority?: string; assigned_to?: number | null }) =>
-    api.put(`/admin/tickets/${id}`, data),
+    api.put(`/tickets/admin/${id}`, data),
   addMessage: (id: number, message: string) =>
-    api.post(`/admin/tickets/${id}/messages`, { message }),
+    api.post(`/tickets/admin/${id}/reply`, { message }),
+  getStats: () => api.get('/tickets/admin/stats'),
 }
 // Categories API
 export const categoriesAPI = {

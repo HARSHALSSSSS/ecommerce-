@@ -85,9 +85,13 @@ interface ShipmentEvent {
 interface ReturnRequest {
   id: number;
   status: string;
-  reason: string;
+  status_label: string;
+  reason_code: string;
+  reason_label: string;
   requested_action: string;
+  action_label: string;
   created_at: string;
+  order_id: number;
 }
 
 interface Refund {
@@ -979,17 +983,17 @@ export default function ProfileScreen() {
                                 returnReq.status === 'rejected' ? '#EF4444' : '#F59E0B', 
                               fontSize: 12 
                             }]}>
-                              {returnReq.status.replace(/_/g, ' ').toUpperCase()}
+                              {returnReq.status_label || returnReq.status.replace(/_/g, ' ').toUpperCase()}
                             </Text>
                           </View>
                         </View>
                         <View style={styles.trackingRow}>
                           <Text style={styles.trackingLabel}>Reason</Text>
-                          <Text style={styles.trackingValue}>{returnReq.reason.replace(/_/g, ' ')}</Text>
+                          <Text style={styles.trackingValue}>{returnReq.reason_label || returnReq.reason_code?.replace(/_/g, ' ')}</Text>
                         </View>
                         <View style={styles.trackingRow}>
                           <Text style={styles.trackingLabel}>Action</Text>
-                          <Text style={styles.trackingValue}>{returnReq.requested_action}</Text>
+                          <Text style={styles.trackingValue}>{returnReq.action_label || returnReq.requested_action}</Text>
                         </View>
                         <View style={styles.trackingRow}>
                           <Text style={styles.trackingLabel}>Submitted</Text>

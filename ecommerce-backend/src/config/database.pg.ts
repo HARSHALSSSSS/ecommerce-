@@ -88,6 +88,11 @@ class DatabaseWrapper {
     result = result.replace(/datetime\s*\(\s*'now'\s*,\s*'-'\s*\|\|\s*\?\s*\|\|\s*'\s*(minutes?|hours?|days?)'\s*\)/gi,
       (match, unit) => `NOW() - (? || ' ${unit}')::INTERVAL`);
     
+    // Convert SQLite json_set to PostgreSQL jsonb_set
+    // Pattern: json_set(COALESCE(column, '{}'), '$.key', value) -> jsonb_set(COALESCE(column::jsonb, '{}'), '{key}', to_jsonb(value))
+    result = result.replace(/json_set\s*\(\s*COALESCE\s*\(\s*(\w+)\s*,\s*'{}'\s*\)\s*,\s*'\$\.(\w+)'\s*,\s*\?\s*\)/gi,
+      "jsonb_set(COALESCE($1::jsonb, '{}'), '{$2}', COALESCE(to_jsonb(?::text), 'null'::jsonb))");
+    
     // Convert strftime('%H', column) to EXTRACT(HOUR FROM column)
     result = result.replace(/CAST\s*\(\s*strftime\s*\(\s*'%H'\s*,\s*(\w+)\s*\)\s*AS\s*INTEGER\s*\)/gi,
       'EXTRACT(HOUR FROM $1)::INTEGER');
