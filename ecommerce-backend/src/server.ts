@@ -43,6 +43,18 @@ app.use(helmet());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// Ensure DB is initialized before handling any request
+app.use(async (req, res, next) => {
+  try {
+    const { getDatabase } = require('./config/database');
+    getDatabase();
+    next();
+  } catch (err) {
+    console.error('Database not initialized:', err);
+    res.status(503).json({ success: false, message: 'Database not initialized. Please try again in a moment.' });
+  }
+});
+
 // CORS configuration - allow all localhost ports for development
 app.use(cors({
   origin: function (origin, callback) {
