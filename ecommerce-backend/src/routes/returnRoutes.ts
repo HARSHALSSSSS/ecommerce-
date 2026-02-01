@@ -478,7 +478,7 @@ router.get('/admin/:id', authenticateAdmin, async (req: Request, res: Response):
 
     const returnRequest = await db.get(
       `SELECT r.*, 
-              o.order_number, o.total_amount as order_total, o.items as order_items,
+              o.order_number, o.total_amount as order_total,
               o.delivery_address, o.city, o.postal_code,
               u.name as customer_name, u.email as customer_email, u.phone as customer_phone
        FROM return_requests r
@@ -493,6 +493,20 @@ router.get('/admin/:id', authenticateAdmin, async (req: Request, res: Response):
       return;
     }
 
+    // Get order items separately (since they're in a separate table)
+    let orderItems: any[] = [];
+    try {
+      orderItems = await db.all(
+        `SELECT oi.*, p.name as product_name, p.sku, p.image_url
+         FROM order_items oi
+         LEFT JOIN products p ON oi.product_id = p.id
+         WHERE oi.order_id = ?`,
+        [returnRequest.order_id]
+      );
+    } catch (orderItemsError) {
+      console.log('Could not fetch order items:', orderItemsError);
+    }
+
     // Get timeline
     const timeline = await db.all(
       `SELECT * FROM return_events WHERE return_id = ? ORDER BY created_at DESC`,
@@ -500,19 +514,29 @@ router.get('/admin/:id', authenticateAdmin, async (req: Request, res: Response):
     );
 
     // Get refund if any
-    const refund = await db.get(
-      `SELECT * FROM refunds WHERE return_id = ?`,
-      [id]
-    );
+    let refund = null;
+    try {
+      refund = await db.get(
+        `SELECT * FROM refunds WHERE return_id = ?`,
+        [id]
+      );
+    } catch (refundError) {
+      console.log('Could not fetch refund:', refundError);
+    }
 
     // Get replacement order if any
-    const replacement = await db.get(
-      `SELECT ro.*, o.order_number as replacement_order_number
-       FROM replacement_orders ro
-       LEFT JOIN orders o ON ro.replacement_order_id = o.id
-       WHERE ro.return_id = ?`,
-      [id]
-    );
+    let replacement = null;
+    try {
+      replacement = await db.get(
+        `SELECT ro.*, o.order_number as replacement_order_number
+         FROM replacement_orders ro
+         LEFT JOIN orders o ON ro.replacement_order_id = o.id
+         WHERE ro.return_id = ?`,
+        [id]
+      );
+    } catch (replacementError) {
+      console.log('Could not fetch replacement:', replacementError);
+    }
 
     // Get available transitions
     const currentStatus = returnRequest.status;
@@ -531,7 +555,7 @@ router.get('/admin/:id', authenticateAdmin, async (req: Request, res: Response):
         status_label: RETURN_STATUSES[returnRequest.status]?.label || returnRequest.status,
         items: safeJsonParse(returnRequest.items, []),
         images: safeJsonParse(returnRequest.images, []),
-        order_items: safeJsonParse(returnRequest.order_items, []),
+        order_items: orderItems,
         timeline,
         refund,
         replacement,

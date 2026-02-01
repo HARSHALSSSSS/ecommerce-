@@ -69,6 +69,12 @@ class DatabaseWrapper {
     // Convert AUTOINCREMENT to SERIAL (for table creation)
     result = result.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY');
     
+    // Convert DATE('now') to CURRENT_DATE (must come before datetime conversions)
+    result = result.replace(/DATE\s*\(\s*'now'\s*\)/gi, 'CURRENT_DATE');
+    
+    // Convert date('now') lowercase
+    result = result.replace(/date\s*\(\s*'now'\s*\)/gi, 'CURRENT_DATE');
+    
     // Convert datetime('now') to NOW()
     result = result.replace(/datetime\s*\(\s*'now'\s*\)/gi, 'NOW()');
     
@@ -88,22 +94,31 @@ class DatabaseWrapper {
     result = result.replace(/datetime\s*\(\s*'now'\s*,\s*'-'\s*\|\|\s*\?\s*\|\|\s*'\s*(minutes?|hours?|days?)'\s*\)/gi,
       (match, unit) => `NOW() - (? || ' ${unit}')::INTERVAL`);
     
+    // Convert JULIANDAY difference to PostgreSQL EXTRACT(EPOCH FROM ...) / 86400
+    // Pattern: (JULIANDAY(col1) - JULIANDAY(col2)) * 24 -> EXTRACT(EPOCH FROM (col1 - col2)) / 3600
+    result = result.replace(/\(\s*JULIANDAY\s*\(\s*(\w+)\s*\)\s*-\s*JULIANDAY\s*\(\s*(\w+)\s*\)\s*\)\s*\*\s*24/gi,
+      (match, col1, col2) => `EXTRACT(EPOCH FROM (${col1} - ${col2})) / 3600`);
+    
+    // Convert standalone JULIANDAY(column) to EXTRACT(EPOCH FROM column) / 86400
+    result = result.replace(/JULIANDAY\s*\(\s*(\w+)\s*\)/gi,
+      (match, col) => `EXTRACT(EPOCH FROM ${col}) / 86400`);
+    
     // Convert SQLite json_set to PostgreSQL jsonb_set
-    // Pattern: json_set(COALESCE(column, '{}'), '$.key', value) -> jsonb_set(COALESCE(column::jsonb, '{}'), '{key}', to_jsonb(value))
-    result = result.replace(/json_set\s*\(\s*COALESCE\s*\(\s*(\w+)\s*,\s*'{}'\s*\)\s*,\s*'\$\.(\w+)'\s*,\s*\?\s*\)/gi,
-      "jsonb_set(COALESCE($1::jsonb, '{}'), '{$2}', COALESCE(to_jsonb(?::text), 'null'::jsonb))");
+    // Pattern: json_set(COALESCE(column, '{}'), '$.key', ?) -> jsonb_set(COALESCE(column::jsonb, '{}'), '{key}', to_jsonb(?::text))
+    result = result.replace(/json_set\s*\(\s*COALESCE\s*\(\s*(\w+)\s*,\s*'{}'\s*\)\s*,\s*'\$\.(\w+)'\s*,\s*(\?|[^)]+)\s*\)/gi,
+      (match, col, key, val) => `jsonb_set(COALESCE(${col}::jsonb, '{}'), '{${key}}', COALESCE(to_jsonb(${val}::text), 'null'::jsonb))`);
     
     // Convert strftime('%H', column) to EXTRACT(HOUR FROM column)
     result = result.replace(/CAST\s*\(\s*strftime\s*\(\s*'%H'\s*,\s*(\w+)\s*\)\s*AS\s*INTEGER\s*\)/gi,
-      'EXTRACT(HOUR FROM $1)::INTEGER');
+      (match, col) => `EXTRACT(HOUR FROM ${col})::INTEGER`);
     
     // Convert strftime('%w', column) for day of week
     result = result.replace(/strftime\s*\(\s*'%w'\s*,\s*(\w+)\s*\)/gi,
-      'EXTRACT(DOW FROM $1)');
+      (match, col) => `EXTRACT(DOW FROM ${col})`);
     
     // Convert CAST(strftime('%w', column) AS INTEGER)
     result = result.replace(/CAST\s*\(\s*strftime\s*\(\s*'%w'\s*,\s*(\w+)\s*\)\s*AS\s*INTEGER\s*\)/gi,
-      'EXTRACT(DOW FROM $1)::INTEGER');
+      (match, col) => `EXTRACT(DOW FROM ${col})::INTEGER`);
     
     // Convert INTEGER to INTEGER (no change needed for basic types)
     // Convert REAL to DOUBLE PRECISION

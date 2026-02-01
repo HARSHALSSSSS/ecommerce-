@@ -208,12 +208,12 @@ router.patch('/:id/status', authenticateAdmin, async (req, res) => {
 
     const processedAt = status === 'completed' ? new Date().toISOString() : payment.processed_at;
 
+    // Simple update without json_set for better PostgreSQL compatibility
     await db.run(
       `UPDATE payments 
-       SET status = ?, processed_at = ?, updated_at = CURRENT_TIMESTAMP,
-           metadata = json_set(COALESCE(metadata, '{}'), '$.admin_notes', ?)
+       SET status = ?, processed_at = ?, updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [status, processedAt, notes || null, id]
+      [status, processedAt, id]
     );
 
     // If payment is completed, automatically generate invoice
