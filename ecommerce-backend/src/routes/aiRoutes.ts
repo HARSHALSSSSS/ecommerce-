@@ -6,8 +6,18 @@
 import express from 'express';
 import * as aiController from '../controllers/aiController.js';
 import { authenticateAdmin, requireRole } from '../middleware/auth.js';
+import { geminiService } from '../services/geminiService.js';
 
 const router = express.Router();
+
+// Health check for AI service (no auth required for debugging)
+router.get('/status', (req, res) => {
+  res.json({
+    success: true,
+    ai_service_initialized: geminiService.isInitialized(),
+    timestamp: new Date().toISOString()
+  });
+});
 
 // All AI routes require admin authentication
 router.use(authenticateAdmin);

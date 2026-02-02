@@ -147,6 +147,17 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, message: 'Server is running' });
 });
 
+// AI service status (no auth - for debugging)
+app.get('/api/ai-status', (req: Request, res: Response) => {
+  const apiKeySet = !!process.env.GEMINI_API_KEY;
+  res.json({ 
+    success: true,
+    gemini_api_key_set: apiKeySet,
+    ai_service_initialized: geminiService.isInitialized(),
+    environment: process.env.NODE_ENV
+  });
+});
+
 // Not found handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({ success: false, message: 'Route not found' });
