@@ -375,16 +375,22 @@ Generate only the description, no additional formatting or notes.`;
       // Update usage with failure
       await this.updateUsage(request.adminId, 'description', 0, 0, false);
 
+      // Check for quota exceeded error
+      let errorMessage = error.message || 'Failed to generate description';
+      if (error.status === 429 || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+        errorMessage = 'AI quota exceeded. The free tier daily limit has been reached. Please wait for quota reset (usually 24 hours) or upgrade to a paid plan at https://aistudio.google.com/';
+      }
+
       // Log error in audit
       await db.run(
         `INSERT INTO ai_audit_log (action_type, action_description, admin_id, success, error_message)
          VALUES (?, ?, ?, ?, ?)`,
-        ['generate_description', 'Failed to generate description', request.adminId, 0, error.message]
+        ['generate_description', 'Failed to generate description', request.adminId, 0, errorMessage]
       );
 
       return {
         success: false,
-        error: error.message || 'Failed to generate description'
+        error: errorMessage
       };
     }
   }
@@ -483,15 +489,21 @@ Generate only the image prompt, no additional commentary.`;
       
       await this.updateUsage(request.adminId, 'image', 0, 0, false);
 
+      // Check for quota exceeded error
+      let errorMessage = error.message || 'Failed to generate image prompt';
+      if (error.status === 429 || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+        errorMessage = 'AI quota exceeded. The free tier daily limit has been reached. Please wait for quota reset (usually 24 hours) or upgrade to a paid plan at https://aistudio.google.com/';
+      }
+
       await db.run(
         `INSERT INTO ai_audit_log (action_type, action_description, admin_id, success, error_message)
          VALUES (?, ?, ?, ?, ?)`,
-        ['generate_image_prompt', 'Failed to generate image prompt', request.adminId, 0, error.message]
+        ['generate_image_prompt', 'Failed to generate image prompt', request.adminId, 0, errorMessage]
       );
 
       return {
         success: false,
-        error: error.message || 'Failed to generate image prompt'
+        error: errorMessage
       };
     }
   }
