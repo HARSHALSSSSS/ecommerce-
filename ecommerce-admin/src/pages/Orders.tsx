@@ -295,11 +295,12 @@ export default function Orders() {
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-5 md:p-6 hover:shadow-md transition-shadow">
-            <div className="flex flex-col">
-              <p className="text-xs sm:text-sm text-gray-500 font-medium">Today's Orders</p>
-              <p className="text-2xl md:text-3xl font-bold text-gray-900 mt-2">{stats.today?.orders_today || 0}</p>
-              <p className="text-xs sm:text-sm text-green-600 font-medium mt-1">{formatCurrency(stats.today?.revenue_today || 0)}</p>
-            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-500 font-medium">Today's Orders</p>
+                <p className="text-2xl md:text-3xl font-bold text-gray-900 mt-2">{stats.today?.orders_today || 0}</p>
+                <p className="text-xs sm:text-sm text-green-600 font-medium mt-1">{formatCurrency(stats.today?.revenue_today || 0)}</p>
+              </div>
               <div className="p-3 bg-blue-100 rounded-xl"><Package className="w-6 h-6 text-blue-600" /></div>
             </div>
           </div>
