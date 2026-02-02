@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Gemini AI Service
  * Handles all interactions with Google's Gemini AI API
  * Features: Image generation, text generation, rate limiting, cost tracking
@@ -75,7 +75,7 @@ export class GeminiService {
           requested_by INTEGER NOT NULL,
           generated_content TEXT,
           generated_image_url TEXT,
-          ai_model TEXT DEFAULT 'gemini-1.5-flash',
+          ai_model TEXT DEFAULT 'gemini-2.0-flash',
           approved_by INTEGER,
           rejected_by INTEGER,
           approval_notes TEXT,
@@ -125,7 +125,7 @@ export class GeminiService {
         )
       `);
 
-      console.log('✅ AI tables ensured');
+      console.log('âœ… AI tables ensured');
     } catch (error) {
       console.error('Error ensuring AI tables:', error);
     }
@@ -141,7 +141,7 @@ export class GeminiService {
       
       // Try env first
       let apiKey = process.env.GEMINI_API_KEY;
-      console.log('🔑 Checking for GEMINI_API_KEY in environment:', apiKey ? 'Found (length: ' + apiKey.length + ')' : 'Not found');
+      console.log('ðŸ”‘ Checking for GEMINI_API_KEY in environment:', apiKey ? 'Found (length: ' + apiKey.length + ')' : 'Not found');
       
       // Then try database
       if (!apiKey) {
@@ -149,23 +149,23 @@ export class GeminiService {
           const db = getDb();
           const settings = await db.get('SELECT gemini_api_key FROM ai_settings WHERE id = 1');
           apiKey = settings?.gemini_api_key;
-          console.log('🔑 Checking for GEMINI_API_KEY in database:', apiKey ? 'Found' : 'Not found');
+          console.log('ðŸ”‘ Checking for GEMINI_API_KEY in database:', apiKey ? 'Found' : 'Not found');
         } catch (e) {
           console.log('Could not get API key from database, using env only');
         }
       }
       
       if (!apiKey) {
-        console.warn('⚠️ Gemini API key not configured. AI features will be disabled.');
+        console.warn('âš ï¸ Gemini API key not configured. AI features will be disabled.');
         this.initialized = false;
         return;
       }
 
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.initialized = true;
-      console.log('✅ Gemini AI service initialized with model: gemini-1.5-flash');
+      console.log('âœ… Gemini AI service initialized with model: gemini-2.0-flash');
     } catch (error) {
-      console.error('❌ Failed to initialize Gemini AI:', error);
+      console.error('âŒ Failed to initialize Gemini AI:', error);
       this.initialized = false;
     }
   }
@@ -280,7 +280,7 @@ export class GeminiService {
    */
   async generateDescription(request: AIGenerationRequest): Promise<AIGenerationResult> {
     if (!this.isInitialized()) {
-      console.error('❌ generateDescription called but Gemini AI not initialized');
+      console.error('âŒ generateDescription called but Gemini AI not initialized');
       console.error('   initialized flag:', this.initialized);
       console.error('   genAI exists:', this.genAI !== null);
       return { 
@@ -313,7 +313,7 @@ export class GeminiService {
       }
 
       // Generate content with Gemini 1.5 Flash (fast and efficient)
-      const model = this.genAI!.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.genAI!.getGenerativeModel({ model: 'gemini-2.0-flash' });
       
       const enhancedPrompt = `You are a professional e-commerce product copywriter. Generate an engaging, SEO-optimized product description.
 
@@ -347,7 +347,7 @@ Generate only the description, no additional formatting or notes.`;
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'description', 'pending', request.prompt, request.productId || null,
-          request.adminId, description, 'gemini-1.5-flash', tokensUsed, cost, generationTime
+          request.adminId, description, 'gemini-2.0-flash', tokensUsed, cost, generationTime
         ]
       );
 
@@ -395,7 +395,7 @@ Generate only the description, no additional formatting or notes.`;
    */
   async generateImagePrompt(request: AIGenerationRequest): Promise<AIGenerationResult> {
     if (!this.isInitialized()) {
-      console.error('❌ generateImagePrompt called but Gemini AI not initialized');
+      console.error('âŒ generateImagePrompt called but Gemini AI not initialized');
       return { 
         success: false, 
         error: 'Gemini AI not initialized. Please check GEMINI_API_KEY environment variable in Render dashboard.' 
@@ -425,7 +425,7 @@ Generate only the description, no additional formatting or notes.`;
         }
       }
 
-      const model = this.genAI!.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.genAI!.getGenerativeModel({ model: 'gemini-2.0-flash' });
       
       const enhancedPrompt = `You are an expert at creating detailed image generation prompts. Create a highly detailed prompt for generating a professional product photo.
 
@@ -458,7 +458,7 @@ Generate only the image prompt, no additional commentary.`;
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'image', 'pending', request.prompt, request.productId || null,
-          request.adminId, imagePrompt, 'gemini-1.5-flash', tokensUsed, cost, generationTime
+          request.adminId, imagePrompt, 'gemini-2.0-flash', tokensUsed, cost, generationTime
         ]
       );
 
