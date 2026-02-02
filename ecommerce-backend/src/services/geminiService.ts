@@ -1,7 +1,5 @@
 ﻿/**
- * Gemini AI Service
- * Handles all interactions with Google's Gemini AI API
- * Features: Image generation, text generation, rate limiting, cost tracking
+ * Gemini AI Service - Google AI integration for product content generation
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -31,7 +29,6 @@ interface UsageQuota {
   canGenerate: boolean;
 }
 
-// Helper function to get database instance
 const getDb = () => getDatabase();
 
 export class GeminiService {
@@ -44,8 +41,7 @@ export class GeminiService {
   async ensureTablesExist(): Promise<void> {
     try {
       const db = getDb();
-      
-      // Create ai_settings table if not exists
+
       await db.run(`
         CREATE TABLE IF NOT EXISTS ai_settings (
           id INTEGER PRIMARY KEY DEFAULT 1,
@@ -61,10 +57,8 @@ export class GeminiService {
         )
       `);
 
-      // Insert default settings if not exists
       await db.run(`INSERT OR IGNORE INTO ai_settings (id, daily_quota_per_user) VALUES (1, 100)`);
 
-      // Create ai_generations table
       await db.run(`
         CREATE TABLE IF NOT EXISTS ai_generations (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,7 +83,6 @@ export class GeminiService {
         )
       `);
 
-      // Create ai_usage_logs table
       await db.run(`
         CREATE TABLE IF NOT EXISTS ai_usage_logs (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,7 +103,6 @@ export class GeminiService {
         )
       `);
 
-      // Create ai_audit_log table
       await db.run(`
         CREATE TABLE IF NOT EXISTS ai_audit_log (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,18 +124,15 @@ export class GeminiService {
   }
 
   /**
-   * Initialize Gemini AI service with API key from database or env
+   * Initialize with API key from environment or database fallback
    */
   async initialize(): Promise<void> {
     try {
-      // First ensure tables exist
       await this.ensureTablesExist();
-      
-      // Try env first
+
       let apiKey = process.env.GEMINI_API_KEY;
-      console.log('ðŸ”‘ Checking for GEMINI_API_KEY in environment:', apiKey ? 'Found (length: ' + apiKey.length + ')' : 'Not found');
-      
-      // Then try database
+      console.log('ðŸ"' Checking for GEMINI_API_KEY in environment:', apiKey ? 'Found (length: ' + apiKey.length + ')' : 'Not found');
+
       if (!apiKey) {
         try {
           const db = getDb();
@@ -170,34 +159,28 @@ export class GeminiService {
     }
   }
 
-  /**
-   * Check if service is ready
-   */
   isInitialized(): boolean {
     return this.initialized && this.genAI !== null;
   }
 
   /**
-   * Check daily usage quota for admin
+   * Returns remaining quota for rate limiting
    */
   async checkQuota(adminId: number): Promise<UsageQuota> {
     try {
       await this.ensureTablesExist();
       const db = getDb();
       const today = new Date().toISOString().split('T')[0];
-      
-      // Get or create today's usage log
+
       let usage = await db.get(
         'SELECT * FROM ai_usage_logs WHERE admin_id = ? AND usage_date = ?',
         [adminId, today]
       );
 
       if (!usage) {
-        // Get daily quota from settings
         const settings = await db.get('SELECT daily_quota_per_user FROM ai_settings WHERE id = 1');
         const dailyLimit = settings?.daily_quota_per_user || 100;
 
-        // Create new usage log
         await db.run(
           `INSERT INTO ai_usage_logs 
            (usage_date, admin_id, daily_quota_limit, quota_remaining) 
@@ -225,9 +208,6 @@ export class GeminiService {
     }
   }
 
-  /**
-   * Update usage statistics
-   */
   private async updateUsage(adminId: number, type: string, tokens: number, cost: number, success: boolean): Promise<void> {
     try {
       const db = getDb();
@@ -235,7 +215,6 @@ export class GeminiService {
       const isImage = type === 'image' ? 1 : 0;
       const isDescription = type === 'description' ? 1 : 0;
 
-      // Check if record exists
       const existing = await db.get(
         'SELECT id FROM ai_usage_logs WHERE admin_id = ? AND usage_date = ?',
         [adminId, today]
@@ -275,9 +254,6 @@ export class GeminiService {
     }
   }
 
-  /**
-   * Generate product description using Gemini
-   */
   async generateDescription(request: AIGenerationRequest): Promise<AIGenerationResult> {
     if (!this.isInitialized()) {
       console.error('âŒ generateDescription called but Gemini AI not initialized');

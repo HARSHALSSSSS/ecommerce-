@@ -44,7 +44,6 @@ const PORT: number = parseInt(process.env.PORT || '5000', 10);
 // This allows express-rate-limit to correctly identify users by their real IP
 app.set('trust proxy', 1);
 
-// Middleware
 app.use(helmet());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -60,7 +59,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-// CORS configuration - allow all localhost ports for development
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -83,7 +81,6 @@ app.use(cors({
   optionsSuccessStatus: 200,
 }));
 
-// Rate limiting - Increased limits for development
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 500, // limit each IP to 500 requests per minute (much higher for dev)
@@ -99,7 +96,6 @@ const authLimiter = rateLimit({
 app.use('/api/', limiter);
 app.use('/api/auth/', authLimiter);
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderManagementRoutes); // User-facing order routes (my-orders) - MUST come before orderRoutes
@@ -114,32 +110,31 @@ app.use('/api/admin', userManagementRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', productManagementRoutes);
 
-// Shipment, Return, Refund, Replacement routes (Phase 5)
-app.use('/api/admin', shipmentRoutes);           // Admin shipment management (/admin/couriers, /admin/shipments)
-app.use('/api/shipments', shipmentRoutes);       // User shipment tracking (/tracking/:orderId)
-app.use('/api/returns', returnRoutes);           // All return routes (user: /reasons, /actions, /request, /my-returns; admin: /admin/*)
-app.use('/api/refunds', refundRoutes);           // All refund routes (user: /my-refunds, /order/:orderId; admin: /admin/*)
-app.use('/api/replacements', replacementRoutes); // All replacement routes (user: /my-replacements; admin: /admin/*)
-app.use('/api/tickets', ticketRoutes);           // All ticket routes (user: /, /my-tickets; admin: /admin/*)
+// Returns & Fulfillment
+app.use('/api/admin', shipmentRoutes);
+app.use('/api/shipments', shipmentRoutes);
+app.use('/api/returns', returnRoutes);
+app.use('/api/refunds', refundRoutes);
+app.use('/api/replacements', replacementRoutes);
+app.use('/api/tickets', ticketRoutes);
 
-// Payment, Invoice & Notification routes (Phase 7)
-app.use('/api/payments', paymentRoutes);         // All payment routes (user: /user/history, /user/:id; admin: /, /:id, /:id/status)
-app.use('/api/invoices', invoiceRoutes);         // All invoice routes (user: /user/list, /user/:id; admin: /, /:id, /generate, /:id/pdf)
-app.use('/api/credit-notes', creditNoteRoutes);  // All credit note routes (user: /user/list, /user/:id; admin: /, /:id, /:id/apply)
-app.use('/api/notifications', notificationRoutes); // All notification routes (user: /user/list, /user/preferences; admin: /, /send, /templates)
+// Payments & Billing
+app.use('/api/payments', paymentRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/credit-notes', creditNoteRoutes);
+app.use('/api/notifications', notificationRoutes);
 
-// Notification, Email & Marketing routes (Phase 8)
-app.use('/api/admin/templates', templateRoutes);      // Template management with versioning
-app.use('/api/admin/event-rules', eventRulesRoutes);  // Event trigger rules for notifications
-app.use('/api/campaigns', campaignRoutes);            // Marketing campaigns, segments, category rules
+// Marketing & Templates
+app.use('/api/admin/templates', templateRoutes);
+app.use('/api/admin/event-rules', eventRulesRoutes);
+app.use('/api/campaigns', campaignRoutes);
 
-// Reports, Audit & System Settings routes (Phase 9)
-app.use('/api/reports', reportRoutes);                // Sales, tax, order analytics with export
-app.use('/api/audit', auditRoutes);                   // System-wide audit logs (WORM-compliant)
-app.use('/api/settings', settingsRoutes);             // System configuration with version control
-app.use('/api/features', featureToggleRoutes);        // Feature toggles with kill-switch support
+// System Administration
+app.use('/api/reports', reportRoutes);
+app.use('/api/audit', auditRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/features', featureToggleRoutes);
 
-// AI Features routes (Advanced) - Must be before catch-all 404 handler
 app.use('/api/ai', aiRoutes);
 
 // Health check

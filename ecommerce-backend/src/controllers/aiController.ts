@@ -34,7 +34,6 @@ export const generateDescription = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Prompt is required' });
     }
 
-    // Check quota first
     const quota = await geminiService.checkQuota(adminId);
     if (!quota.canGenerate) {
       return res.status(429).json({ 
@@ -55,7 +54,6 @@ export const generateDescription = async (req: Request, res: Response) => {
       return res.status(400).json(result);
     }
 
-    // Get the created generation
     const generation = await db().get(
       'SELECT * FROM ai_generations WHERE id = ?',
       [result.generationId]

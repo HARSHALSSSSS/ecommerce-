@@ -393,16 +393,13 @@ router.get('/orders/:id', authenticateAdmin, async (req: Request, res: Response)
       WHERE oi.order_id = ?
     `, [id]);
 
-    // Get available status transitions
+    // Get available status transitions based on current state
     const currentStatus = order.status;
-    console.log(`[DEBUG] Order ${id} current status: "${currentStatus}"`);
     const transitions = ORDER_STATUS_TRANSITIONS[currentStatus];
-    console.log(`[DEBUG] Available transitions for "${currentStatus}":`, transitions);
     const availableTransitions = transitions?.next.map(status => ({
       status,
       display_name: STATUS_DISPLAY_NAMES[status] || status,
     })) || [];
-    console.log(`[DEBUG] Mapped availableTransitions:`, availableTransitions);
 
     // Get customer's order history count
     const customerOrders = await db.get(
