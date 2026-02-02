@@ -82,35 +82,35 @@ export default function Sidebar({ isOpen, isMobileOpen, onClose }: SidebarProps)
       {/* Desktop Sidebar */}
       <aside
         className={clsx(
-          'fixed left-0 top-0 z-30 h-full bg-white shadow-lg transition-all duration-300 hidden lg:block overflow-y-auto',
+          'fixed left-0 top-0 z-30 h-full bg-white shadow-lg transition-all duration-300 hidden lg:flex flex-col overflow-y-auto border-r border-gray-200',
           isOpen ? 'w-64' : 'w-20'
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-center h-16 border-b border-gray-100">
+        <div className="flex items-center justify-center h-16 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
               <ShoppingBag className="w-5 h-5 text-white" />
             </div>
             {isOpen && (
-              <span className="font-bold text-xl text-gray-800">EcomAdmin</span>
+              <span className="font-bold text-lg text-gray-900">EcomAdmin</span>
             )}
           </div>
         </div>
 
         {/* Menu Items */}
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
           {menuItems.map((item, index) => {
             if ('section' in item) {
               if (item.section === 'divider') {
-                return <div key={index} className="my-2 border-t border-gray-100" />
+                return <div key={index} className="my-3 border-t border-gray-200" />
               }
               return isOpen ? (
-                <div key={index} className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-4">
+                <div key={index} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
                   {item.section}
                 </div>
               ) : (
-                <div key={index} className="my-2 border-t border-gray-100" />
+                <div key={index} className="my-3 border-t border-gray-200" />
               )
             }
 
@@ -122,15 +122,16 @@ export default function Sidebar({ isOpen, isMobileOpen, onClose }: SidebarProps)
                 key={item.path}
                 to={item.path!}
                 className={clsx(
-                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
+                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
                   isActive
-                    ? 'bg-primary text-white shadow-md shadow-primary/30'
-                    : 'text-gray-600 hover:bg-gray-100',
+                    ? 'bg-primary text-white shadow-md shadow-primary/30 font-semibold'
+                    : 'text-gray-600 hover:bg-gray-100 font-medium',
                   !isOpen && 'justify-center'
                 )}
+                title={!isOpen ? item.label : undefined}
               >
                 {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
-                {isOpen && <span className="font-medium">{item.label}</span>}
+                {isOpen && <span className="truncate">{item.label}</span>}
               </Link>
             )
           })}
@@ -140,35 +141,36 @@ export default function Sidebar({ isOpen, isMobileOpen, onClose }: SidebarProps)
       {/* Mobile Sidebar */}
       <aside
         className={clsx(
-          'fixed left-0 top-0 z-50 h-full w-64 bg-white shadow-lg transition-transform duration-300 lg:hidden overflow-y-auto',
+          'fixed left-0 top-0 z-50 h-full w-64 bg-white shadow-2xl transition-transform duration-300 lg:hidden flex flex-col overflow-y-auto border-r border-gray-200',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
               <ShoppingBag className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-xl text-gray-800">EcomAdmin</span>
+            <span className="font-bold text-lg text-gray-900">EcomAdmin</span>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors flex-shrink-0"
+            title="Close menu"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Menu Items */}
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
           {menuItems.map((item, index) => {
             if ('section' in item) {
               if (item.section === 'divider') {
-                return <div key={index} className="my-2 border-t border-gray-100" />
+                return <div key={index} className="my-3 border-t border-gray-200" />
               }
               return (
-                <div key={index} className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-4">
+                <div key={index} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
                   {item.section}
                 </div>
               )
@@ -183,14 +185,14 @@ export default function Sidebar({ isOpen, isMobileOpen, onClose }: SidebarProps)
                 to={item.path!}
                 onClick={onClose}
                 className={clsx(
-                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
+                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium',
                   isActive
-                    ? 'bg-primary text-white shadow-md shadow-primary/30'
+                    ? 'bg-primary text-white shadow-md shadow-primary/30 font-semibold'
                     : 'text-gray-600 hover:bg-gray-100'
                 )}
               >
-                {Icon && <Icon className="w-5 h-5" />}
-                <span className="font-medium">{item.label}</span>
+                {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
+                <span className="truncate">{item.label}</span>
               </Link>
             )
           })}

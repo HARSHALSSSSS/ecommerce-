@@ -77,25 +77,25 @@ function StatCard({
   const isPositive = change >= 0
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-800">{value}</p>
+    <div className="bg-white rounded-2xl p-4 sm:p-5 md:p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500 mb-1 font-medium">{title}</p>
+          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 truncate">{value}</p>
           <div className="flex items-center gap-1 mt-2">
             {isPositive ? (
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
             ) : (
-              <TrendingDown className="w-4 h-4 text-red-500" />
+              <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
             )}
-            <span className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+            <span className={`text-xs sm:text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
               {isPositive ? '+' : ''}{change}%
             </span>
-            <span className="text-sm text-gray-400">vs last month</span>
+            <span className="text-xs sm:text-sm text-gray-400 truncate">vs last month</span>
           </div>
         </div>
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color}`}>
-          <Icon className="w-7 h-7 text-white" />
+        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${color}`}>
+          <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
         </div>
       </div>
     </div>
@@ -211,20 +211,20 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 md:space-y-8">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-500">Welcome back! Here's what's happening with your store.</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-500 mt-1 text-sm md:text-base">Welcome back! Here's what's happening with your store.</p>
         </div>
-        <div className="text-sm text-gray-500">
+        <div className="text-xs md:text-sm text-gray-500 whitespace-nowrap">
           {format(new Date(), 'EEEE, MMMM d, yyyy')}
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="Total Revenue"
           value={`$${stats.totalRevenue.toLocaleString()}`}
@@ -256,18 +256,18 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Sales Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-800">Sales Overview</h2>
-            <select className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 md:p-6 shadow-sm border border-gray-200 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800">Sales Overview</h2>
+            <select className="px-3 py-1.5 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white">
               <option>Last 7 months</option>
               <option>Last 12 months</option>
               <option>This year</option>
             </select>
           </div>
-          <div className="h-72">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={salesData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -293,16 +293,16 @@ export default function Dashboard() {
         </div>
 
         {/* Orders Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-800">Orders Overview</h2>
-            <select className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 md:p-6 shadow-sm border border-gray-200 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800">Orders Overview</h2>
+            <select className="px-3 py-1.5 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white">
               <option>Last 7 months</option>
               <option>Last 12 months</option>
               <option>This year</option>
             </select>
           </div>
-          <div className="h-72">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={salesData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -323,30 +323,30 @@ export default function Dashboard() {
       </div>
 
       {/* Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Recent Orders */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">Recent Orders</h2>
-            <button className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 sm:p-5 md:p-6 border-b border-gray-100">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800">Recent Orders</h2>
+            <button className="flex items-center gap-1 text-sm text-primary font-medium hover:underline transition-colors">
               View all <ArrowRight className="w-4 h-4" />
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Order</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Customer</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Amount</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Status</th>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="text-left py-3 px-4 sm:px-6 text-xs font-medium text-gray-600 uppercase">Order</th>
+                  <th className="text-left py-3 px-4 sm:px-6 text-xs font-medium text-gray-600 uppercase">Customer</th>
+                  <th className="text-left py-3 px-4 sm:px-6 text-xs font-medium text-gray-600 uppercase">Amount</th>
+                  <th className="text-left py-3 px-4 sm:px-6 text-xs font-medium text-gray-600 uppercase">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {recentOrders.map((order) => (
-                  <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="py-4 px-6">
-                      <span className="font-medium text-gray-800">{order.orderNumber}</span>
+                  <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4 sm:px-6">
+                      <span className="font-medium text-gray-800 text-xs sm:text-sm">{order.orderNumber}</span>
                     </td>
                     <td className="py-4 px-6 text-gray-600">{order.customer}</td>
                     <td className="py-4 px-6 font-medium text-gray-800">${order.amount.toFixed(2)}</td>

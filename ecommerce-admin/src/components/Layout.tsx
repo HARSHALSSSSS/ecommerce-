@@ -8,11 +8,11 @@ export default function Layout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
@@ -26,7 +26,7 @@ export default function Layout() {
 
       {/* Main Content */}
       <div
-        className={`transition-all duration-300 ${
+        className={`min-h-screen transition-all duration-300 ${
           sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'
         }`}
       >
@@ -38,8 +38,10 @@ export default function Layout() {
         />
 
         {/* Page Content */}
-        <main className="p-4 md:p-6 lg:p-8 pt-20">
-          <Outlet />
+        <main className="pt-20 pb-8 px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

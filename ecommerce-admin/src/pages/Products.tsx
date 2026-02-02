@@ -118,44 +118,44 @@ export default function Products() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 md:space-y-8">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Products</h1>
-          <p className="text-gray-500">Manage your product inventory</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Products</h1>
+          <p className="text-gray-500 mt-1 text-sm md:text-base">Manage your product inventory</p>
         </div>
         <button
           onClick={handleAddProduct}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm hover:shadow-md font-medium"
         >
-          <Plus className="w-5 h-5" />
-          Add Product
+          <Plus className="w-5 h-5 flex-shrink-0" />
+          <span>Add Product</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 md:p-6 shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 flex-shrink-0" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
             />
           </div>
 
           {/* Category Filter */}
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-400" />
+            <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white text-sm font-medium"
             >
               {categories.map((category) => (
                 <option key={category} value={category}>
@@ -168,75 +168,77 @@ export default function Products() {
       </div>
 
       {/* Products Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Product</th>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">SKU</th>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Category</th>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Price</th>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Stock</th>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Status</th>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Actions</th>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Product</th>
+                <th className="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">SKU</th>
+                <th className="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Category</th>
+                <th className="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Price</th>
+                <th className="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Stock</th>
+                <th className="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Status</th>
+                <th className="text-left py-3 sm:py-4 px-4 sm:px-6 text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredProducts.map((product) => (
-                <tr key={product.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="py-3 sm:py-4 px-4 sm:px-6">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         {product.image_url ? (
                           <img src={product.image_url} alt={product.name} className="w-full h-full object-cover rounded-lg" />
                         ) : (
-                          <Package className="w-6 h-6 text-gray-400" />
+                          <Package className="w-5 h-5 text-gray-400" />
                         )}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-800">{product.name}</p>
-                        <p className="text-sm text-gray-500 truncate max-w-[200px]">{product.description}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-800 text-xs sm:text-sm truncate">{product.name}</p>
+                        <p className="text-xs text-gray-500 truncate hidden sm:block">{product.description}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-gray-600">{product.sku}</td>
-                  <td className="py-4 px-6">
-                    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                  <td className="py-3 sm:py-4 px-4 sm:px-6 text-gray-600 text-xs sm:text-sm whitespace-nowrap">{product.sku}</td>
+                  <td className="py-3 sm:py-4 px-4 sm:px-6">
+                    <span className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs sm:text-sm font-medium">
                       {product.category}
                     </span>
                   </td>
-                  <td className="py-4 px-6">
-                    <div>
-                      <p className="font-medium text-gray-800">${product.price.toFixed(2)}</p>
+                  <td className="py-3 sm:py-4 px-4 sm:px-6">
+                    <div className="text-xs sm:text-sm">
+                      <p className="font-semibold text-gray-800">${product.price.toFixed(2)}</p>
                       {product.discount_percent > 0 && (
-                        <p className="text-xs text-green-600">-{product.discount_percent}% off</p>
+                        <p className="text-xs text-green-600">-{product.discount_percent}%</p>
                       )}
                     </div>
                   </td>
-                  <td className="py-4 px-6">
-                    <span className={`font-medium ${product.stock_quantity < 20 ? 'text-red-600' : 'text-gray-800'}`}>
+                  <td className="py-3 sm:py-4 px-4 sm:px-6">
+                    <span className={`font-semibold text-xs sm:text-sm ${product.stock_quantity < 20 ? 'text-red-600' : 'text-gray-800'}`}>
                       {product.stock_quantity}
                     </span>
                   </td>
-                  <td className="py-4 px-6">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  <td className="py-3 sm:py-4 px-4 sm:px-6">
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                       product.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
                       {product.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-2">
+                  <td className="py-3 sm:py-4 px-4 sm:px-6">
+                    <div className="flex items-center gap-1 sm:gap-2">
                       <button
                         onClick={() => handleEditProduct(product)}
-                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                        className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors flex-shrink-0"
+                        title="Edit product"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setShowDeleteConfirm(product.id)}
-                        className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                        className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition-colors flex-shrink-0"
+                        title="Delete product"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
