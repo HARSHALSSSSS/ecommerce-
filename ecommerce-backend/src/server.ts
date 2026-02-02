@@ -33,6 +33,7 @@ import auditRoutes from './routes/auditRoutes';
 import settingsRoutes from './routes/settingsRoutes';
 import featureToggleRoutes from './routes/featureToggleRoutes';
 import aiRoutes from './routes/aiRoutes.js';
+import { geminiService } from './services/geminiService.js';
 
 dotenv.config();
 
@@ -160,21 +161,20 @@ async function startServer() {
     await initializeDatabase();
     console.log('✅ Database initialized');
 
+    // Initialize AI service BEFORE server starts (uses same instance as controllers)
+    try {
+      await geminiService.initialize();
+      console.log('🤖 AI service initialized successfully');
+    } catch (error) {
+      console.warn('⚠️ AI service initialization failed:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn('   AI features may not work. Check GEMINI_API_KEY environment variable.');
+    }
+
     // Start server and bind to port
-    app.listen(PORT, '0.0.0.0', async () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on http://localhost:${PORT}`);
       console.log(`📡 API available at http://localhost:${PORT}/api`);
       console.log(`🏥 Health check at http://localhost:${PORT}/api/health`);
-      
-      // Initialize AI service after server is running (non-blocking)
-      try {
-        const { geminiService } = await import('./services/geminiService.js');
-        await geminiService.initialize();
-        console.log('🤖 AI service initialized successfully');
-      } catch (error) {
-        console.warn('⚠️ AI service initialization failed:', error instanceof Error ? error.message : 'Unknown error');
-        console.warn('   AI features may not work. Check GEMINI_API_KEY environment variable.');
-      }
     });
 
   } catch (error) {
