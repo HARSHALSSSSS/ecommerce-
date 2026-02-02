@@ -75,6 +75,31 @@ export function authenticateOptional(req: Request, res: Response, next: NextFunc
   next();
 }
 
+/**
+ * Middleware to require a specific admin role
+ * Must be used after authenticateAdmin
+ */
+export function requireRole(...allowedRoles: string[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const admin = req.admin || req.user;
+    
+    if (!admin) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    if (!admin.role || !allowedRoles.includes(admin.role)) {
+      res.status(403).json({ 
+        success: false, 
+        message: `Access denied. Required role: ${allowedRoles.join(' or ')}` 
+      });
+      return;
+    }
+
+    next();
+  };
+}
+
 function extractToken(req: Request): string | null {
   const authHeader = req.headers.authorization;
 

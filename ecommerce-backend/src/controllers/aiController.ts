@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AI Controller
  * Handles all AI-related endpoints for the admin panel
  */
@@ -28,7 +28,7 @@ export const initializeAI = async (_req: Request, res: Response) => {
 export const generateDescription = async (req: Request, res: Response) => {
   try {
     const { prompt, productId } = req.body;
-    const adminId = req.user?.id;
+    const adminId = req.admin?.id;
 
     if (!prompt) {
       return res.status(400).json({ success: false, message: 'Prompt is required' });
@@ -78,7 +78,7 @@ export const generateDescription = async (req: Request, res: Response) => {
 export const generateImagePrompt = async (req: Request, res: Response) => {
   try {
     const { prompt, productId } = req.body;
-    const adminId = req.user?.id;
+    const adminId = req.admin?.id;
 
     if (!prompt) {
       return res.status(400).json({ success: false, message: 'Prompt is required' });
@@ -238,7 +238,7 @@ export const approveGeneration = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { notes } = req.body;
-    const adminId = req.user?.id;
+    const adminId = req.admin?.id;
 
     const result = await geminiService.approveGeneration(
       parseInt(id),
@@ -278,7 +278,7 @@ export const rejectGeneration = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    const adminId = req.user?.id;
+    const adminId = req.admin?.id;
 
     if (!reason) {
       return res.status(400).json({ success: false, message: 'Rejection reason is required' });
@@ -309,7 +309,7 @@ export const rejectGeneration = async (req: Request, res: Response) => {
  */
 export const getMyQuota = async (req: Request, res: Response) => {
   try {
-    const adminId = req.user?.id;
+    const adminId = req.admin?.id;
     const quota = await geminiService.checkQuota(adminId);
     
     res.json({
@@ -418,7 +418,7 @@ export const updateAISettings = async (req: Request, res: Response) => {
       cost_per_1k_tokens_usd
     } = req.body;
 
-    const adminId = req.user?.id;
+    const adminId = req.admin?.id;
 
     const updates: string[] = [];
     const params: any[] = [];
