@@ -33,6 +33,10 @@ import Reports from './pages/Reports'
 import AuditLogs from './pages/AuditLogs'
 import StoreSettings from './pages/StoreSettings'
 import FeatureToggles from './pages/FeatureToggles'
+import AIImageGenerator from './pages/AIImageGenerator'
+import AIDescriptionGenerator from './pages/AIDescriptionGenerator'
+import AIApprovalQueue from './pages/AIApprovalQueue'
+import AIUsageDashboard from './pages/AIUsageDashboard'
 import Layout from './components/Layout'
 
 function App() {
@@ -81,6 +85,10 @@ function App() {
             <Route path="reports" element={<Reports />} />
             <Route path="audit-logs" element={<AuditLogs />} />
             <Route path="feature-toggles" element={<FeatureToggles />} />
+            <Route path="ai/image-generator" element={<AIImageGenerator />} />
+            <Route path="ai/description-generator" element={<AIDescriptionGenerator />} />
+            <Route path="ai/approval-queue" element={<AIApprovalQueue />} />
+            <Route path="ai/usage-dashboard" element={<AIUsageDashboard />} />
             <Route path="settings" element={<StoreSettings />} />
           </Route>
 

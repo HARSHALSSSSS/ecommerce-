@@ -28,6 +28,9 @@ import {
   BarChart2,
   FileSearch,
   ToggleRight,
+  Sparkles,
+  Image,
+  CheckSquare,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -58,6 +61,11 @@ const menuItems = [
   { path: '/notification-templates', label: 'Templates', icon: FileCode },
   { path: '/event-rules', label: 'Event Rules', icon: Zap },
   { path: '/campaigns', label: 'Campaigns', icon: Megaphone },
+  { section: 'AI Features' },
+  { path: '/ai/image-generator', label: 'Image Generator', icon: Image },
+  { path: '/ai/description-generator', label: 'Description Gen', icon: FileText },
+  { path: '/ai/approval-queue', label: 'Approval Queue', icon: CheckSquare },
+  { path: '/ai/usage-dashboard', label: 'AI Analytics', icon: Sparkles },
   { section: 'Customers' },
   { path: '/users', label: 'Customers', icon: Users },
   { path: '/stores', label: 'Stores', icon: Store },

@@ -32,6 +32,8 @@ import reportRoutes from './routes/reportRoutes';
 import auditRoutes from './routes/auditRoutes';
 import settingsRoutes from './routes/settingsRoutes';
 import featureToggleRoutes from './routes/featureToggleRoutes';
+import aiRoutes from './routes/aiRoutes.js';
+import { geminiService } from './services/geminiService.js';
 
 dotenv.config();
 
@@ -137,6 +139,9 @@ app.use('/api/audit', auditRoutes);                   // System-wide audit logs 
 app.use('/api/settings', settingsRoutes);             // System configuration with version control
 app.use('/api/features', featureToggleRoutes);        // Feature toggles with kill-switch support
 
+// AI Features routes (Advanced)
+app.use('/api/ai', aiRoutes);                         // AI generation, approval workflow, usage analytics
+
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, message: 'Server is running' });
@@ -154,6 +159,15 @@ async function startServer() {
 
     // Initialize database
     await initializeDatabase();
+
+    // Initialize AI service (non-blocking, logs error if fails)
+    try {
+      await geminiService.initialize();
+      console.log('🤖 AI service initialized');
+    } catch (error) {
+      console.warn('⚠️ AI service initialization failed:', error);
+      console.warn('   AI features will be disabled until configured');
+    }
 
     // Start server on all network interfaces (0.0.0.0) so mobile devices can connect
     app.listen(PORT, '0.0.0.0', () => {

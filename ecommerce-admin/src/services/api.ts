@@ -812,3 +812,56 @@ export const featureTogglesAPI = {
   check: (feature_key: string, user_id?: number) =>
     api.get(`/features/public/check/${feature_key}`, { params: { user_id } }),
 }
+
+// =============================================
+// AI Features API
+// =============================================
+export const aiAPI = {
+  // Description Generation
+  generateDescription: (data: { prompt: string; productId?: number }) =>
+    api.post('/ai/generate/description', data),
+
+  // Image Prompt Generation
+  generateImagePrompt: (data: { prompt: string; productId?: number }) =>
+    api.post('/ai/generate/image', data),
+
+  // Get Pending Approvals
+  getPendingApprovals: (params?: { page?: number; limit?: number }) =>
+    api.get('/ai/approvals/pending', { params }),
+
+  // Get All Generations
+  getGenerations: (params?: { page?: number; limit?: number; status?: string; type?: string }) =>
+    api.get('/ai/generations', { params }),
+
+  // Approve Generation
+  approve: (id: number, notes?: string) =>
+    api.post(`/ai/approvals/${id}/approve`, { notes }),
+
+  // Reject Generation
+  reject: (id: number, reason: string) =>
+    api.post(`/ai/approvals/${id}/reject`, { reason }),
+
+  // Get My Quota
+  getMyQuota: () => api.get('/ai/quota/me'),
+
+  // Get Usage Statistics (Super Admin)
+  getUsageStats: (params?: { startDate?: string; endDate?: string }) =>
+    api.get('/ai/usage/stats', { params }),
+
+  // Get AI Settings (Super Admin)
+  getSettings: () => api.get('/ai/settings'),
+
+  // Update AI Settings (Super Admin)
+  updateSettings: (data: {
+    gemini_api_key?: string;
+    daily_quota_per_user?: number;
+    image_generation_enabled?: boolean;
+    description_generation_enabled?: boolean;
+    auto_approval_enabled?: boolean;
+    cost_per_image_usd?: number;
+    cost_per_1k_tokens_usd?: number;
+  }) => api.put('/ai/settings', data),
+
+  // Initialize AI Service (Super Admin)
+  initialize: () => api.post('/ai/initialize'),
+}
