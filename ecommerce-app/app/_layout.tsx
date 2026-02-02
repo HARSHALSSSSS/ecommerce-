@@ -8,6 +8,7 @@ import { preloadAllProductImages } from '@/src/utils/imageCache';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '@/src/context/AuthContext';
 import { FeatureProvider } from '@/src/context/FeatureContext';
+import { initializeAppOptimizations, cleanupOnAppExit } from '@/src/utils/appInitialization';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -34,6 +35,11 @@ export default function RootLayout() {
       const startTime = Date.now();
       try {
         console.log('🚀 [INIT START] Initializing app...');
+        
+        // iOS optimization setup first (must be early)
+        console.log('📱 [iOS] Starting iOS optimization initialization...');
+        await initializeAppOptimizations();
+        console.log('✓ [iOS] iOS optimizations initialized');
         
         // Database init with timeout (5 seconds max)
         console.log('🔄 [DB] Starting database initialization...');
@@ -106,9 +112,12 @@ export default function RootLayout() {
       }
     }, 10000);
 
-    // Cleanup
+    // Cleanup on app exit
     return () => {
       clearTimeout(safetyTimeoutId);
+      cleanupOnAppExit().catch(err => 
+        console.warn('⚠️ [CLEANUP] Error during app cleanup:', err)
+      );
     };
   }, []);
 

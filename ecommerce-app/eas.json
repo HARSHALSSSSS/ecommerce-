@@ -7,6 +7,35 @@
     "production": {
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "buildType": "ipa",
+        "distribution": "store",
+        "resourceClass": "default",
+        "scheme": "Release",
+        "releaseChannel": "production",
+        "env": {
+          "PLATFORM": "ios"
+        }
+      }
+    },
+    "preview": {
+      "ios": {
+        "buildType": "simulator",
+        "simulator": true,
+        "env": {
+          "PLATFORM": "ios"
+        }
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "YOUR_APP_ID"
       }
     }
   }

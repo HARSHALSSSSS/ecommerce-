@@ -65,6 +65,8 @@ export default function HomeScreen() {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [newAddress, setNewAddress] = useState(deliveryAddress);
   const [loadingImages, setLoadingImages] = useState<Set<number>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -118,39 +120,56 @@ export default function HomeScreen() {
   };
 
   const loadData = async () => {
+    setIsLoading(true);
+    setLoadError(null);
     try {
       console.log('📱 Loading products from API...');
+      console.log('🔗 API will use production URL for standalone build');
       
       // Fetch products from backend API
       const productsResponse = await productsAPI.getAll();
-      console.log('📦 API returned', productsResponse.products?.length || 0, 'products');
+      console.log('📦 API Response:', JSON.stringify(productsResponse).substring(0, 200));
+      console.log('📦 Products count:', productsResponse?.products?.length || 0);
       
-      if (productsResponse.success && productsResponse.products) {
+      if (productsResponse && productsResponse.success && Array.isArray(productsResponse.products)) {
         const apiProducts = productsResponse.products.map((p: any) => ({
           id: p.id,
-          name: p.name,
-          price: p.price,
+          name: p.name || 'Unknown Product',
+          price: p.price || 0,
           discount_percent: p.discount_percent || 0,
           rating: p.rating || 4.5,
-          image_url: p.image_url, // Fixed: was p.image, should be p.image_url
-          category: p.category,
+          image_url: p.image_url || '',
+          category: p.category || 'other',
         }));
         
         // Log first few products with prices for debugging
-        console.log('💰 First 3 product prices:', apiProducts.slice(0, 3).map((p: any) => `${p.name}: $${p.price}`));
+        console.log('💰 First 3 products:', apiProducts.slice(0, 3).map((p: any) => `${p.name}: $${p.price} (img: ${p.image_url ? 'yes' : 'no'})`));
         
-        const validProducts = apiProducts.filter((p: Product) => p.image_url && validateImageUrl(p.image_url));
+        // Don't filter out products without images - show all products
+        // Only filter for products that have image URLs starting with http
+        const validProducts = apiProducts.filter((p: Product) => {
+          const hasValidImage = p.image_url && (p.image_url.startsWith('http://') || p.image_url.startsWith('https://'));
+          if (!hasValidImage) {
+            console.log(`⚠️ Product "${p.name}" has invalid image URL:`, p.image_url);
+          }
+          return hasValidImage;
+        });
+        
+        console.log(`✅ ${validProducts.length} products with valid images out of ${apiProducts.length} total`);
+        
         setAllProducts(validProducts);
         
         const firstSix = validProducts.slice(0, 6);
         setProducts(firstSix);
         
         // FAST: Preload first 6 images immediately (high priority)
-        console.log('⚡ Preloading first 6 visible product images...');
-        const topImageUrls = firstSix
-          .map((p: Product) => p.image_url)
-          .filter((url: string | undefined) => url && validateImageUrl(url)) as string[];
-        preloadImages(topImageUrls).catch(() => {});
+        if (firstSix.length > 0) {
+          console.log('⚡ Preloading first 6 visible product images...');
+          const topImageUrls = firstSix
+            .map((p: Product) => p.image_url)
+            .filter((url: string | undefined): url is string => !!url && (url.startsWith('http://') || url.startsWith('https://')));
+          preloadImages(topImageUrls).catch(() => {});
+        }
         
         // ASYNC: Preload ALL remaining images in background (don't block)
         if (validProducts.length > 6) {
@@ -158,12 +177,13 @@ export default function HomeScreen() {
             console.log('🖼️ Preloading all remaining product images in background...');
             const allImageUrls = validProducts
               .map((p: Product) => p.image_url)
-              .filter((url: string | undefined) => url && validateImageUrl(url)) as string[];
+              .filter((url: string | undefined): url is string => !!url && (url.startsWith('http://') || url.startsWith('https://')));
             preloadImages(allImageUrls).catch(() => {});
           }, 500);
         }
       } else {
-        console.warn('⚠️ API returned no products');
+        console.warn('⚠️ API returned no products or invalid response');
+        console.warn('Response was:', JSON.stringify(productsResponse));
         setAllProducts([]);
         setProducts([]);
       }
@@ -178,14 +198,18 @@ export default function HomeScreen() {
         console.log('Using default store');
         setSelectedStore({ id: 1, name: 'UFO Fashion', location: 'Cikarang, Bekasi' });
       }
-    } catch (error) {
-      console.error('❌ Error loading data from API:', error);
+    } catch (error: any) {
+      console.error('❌ Error loading data from API:', error?.message || error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      setLoadError(error?.message || 'Failed to load products');
       // Show error to user - don't use stale/mock data as prices may be wrong
       Alert.alert(
         'Connection Error',
-        'Unable to load products from server. Please check your network connection and try again.',
+        `Unable to load products from server. Error: ${error?.message || 'Unknown error'}. Please check your network connection and try again.`,
         [{ text: 'Retry', onPress: () => loadData() }]
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 

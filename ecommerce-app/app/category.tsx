@@ -82,33 +82,36 @@ export default function CategoryScreen() {
       const params = category === 'all' ? {} : { category: category as string };
       const response = await productsAPI.getAll(params);
       
-      if (response.success && response.products) {
+      console.log(`📦 API Response for category "${category}":`, response?.products?.length || 0, 'products');
+      
+      if (response && response.success && Array.isArray(response.products)) {
         const apiProducts = response.products.map((p: any) => ({
           id: p.id,
-          name: p.name,
-          price: p.price,
+          name: p.name || 'Unknown Product',
+          price: p.price || 0,
           discount_percent: p.discount_percent || 0,
           rating: p.rating || 4.5,
-          image_url: p.image_url, // Fixed: was p.image, should be p.image_url
-          category: p.category,
+          image_url: p.image_url || '',
+          category: p.category || 'other',
         }));
         
-        console.log(`Loaded ${apiProducts.length} products for category "${category}"`);
+        console.log(`✅ Loaded ${apiProducts.length} products for category "${category}"`);
         setProducts(apiProducts);
         setFilteredProducts(apiProducts);
       } else {
-        console.warn('⚠️ API returned no products');
+        console.warn('⚠️ API returned no products or invalid response');
+        console.warn('Response was:', JSON.stringify(response));
         setProducts([]);
         setFilteredProducts([]);
       }
       setLoading(false);
-    } catch (error) {
-      console.error('❌ Error loading category products from API:', error);
+    } catch (error: any) {
+      console.error('❌ Error loading category products from API:', error?.message || error);
       setLoading(false);
       // Show error to user - don't use stale/mock data as prices may be wrong
       Alert.alert(
         'Connection Error',
-        'Unable to load products from server. Please check your network connection and try again.',
+        `Unable to load products. Error: ${error?.message || 'Unknown error'}`,
         [{ text: 'Retry', onPress: () => loadCategoryProducts() }]
       );
     }
