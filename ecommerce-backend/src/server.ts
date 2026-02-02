@@ -32,8 +32,6 @@ import reportRoutes from './routes/reportRoutes';
 import auditRoutes from './routes/auditRoutes';
 import settingsRoutes from './routes/settingsRoutes';
 import featureToggleRoutes from './routes/featureToggleRoutes';
-import aiRoutes from './routes/aiRoutes.js';
-import { geminiService } from './services/geminiService.js';
 
 dotenv.config();
 
@@ -139,9 +137,6 @@ app.use('/api/audit', auditRoutes);                   // System-wide audit logs 
 app.use('/api/settings', settingsRoutes);             // System configuration with version control
 app.use('/api/features', featureToggleRoutes);        // Feature toggles with kill-switch support
 
-// AI Features routes (Advanced)
-app.use('/api/ai', aiRoutes);                         // AI generation, approval workflow, usage analytics
-
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ success: true, message: 'Server is running' });
@@ -160,13 +155,20 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
 
-    // Initialize AI service (non-blocking, logs error if fails)
+    // Dynamically load and initialize AI features if available
     try {
+      const { default: aiRoutes } = await import('./routes/aiRoutes.js');
+      const { geminiService } = await import('./services/geminiService.js');
+      
+      // Register AI routes
+      app.use('/api/ai', aiRoutes);
+      
+      // Initialize AI service
       await geminiService.initialize();
-      console.log('🤖 AI service initialized');
+      console.log('🤖 AI features enabled and initialized');
     } catch (error) {
-      console.warn('⚠️ AI service initialization failed:', error);
-      console.warn('   AI features will be disabled until configured');
+      console.warn('⚠️ AI features not available:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn('   Server will run without AI features');
     }
 
     // Start server on all network interfaces (0.0.0.0) so mobile devices can connect
