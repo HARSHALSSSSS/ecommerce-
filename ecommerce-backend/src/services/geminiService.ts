@@ -69,7 +69,7 @@ export class GeminiService {
           requested_by INTEGER NOT NULL,
           generated_content TEXT,
           generated_image_url TEXT,
-          ai_model TEXT DEFAULT 'gemini-pro',
+          ai_model TEXT DEFAULT 'gemini-1.5-pro-latest',
           approved_by INTEGER,
           rejected_by INTEGER,
           approval_notes TEXT,
@@ -152,7 +152,7 @@ export class GeminiService {
 
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.initialized = true;
-      console.log('✅ Gemini AI service initialized with model: gemini-pro');
+      console.log('✅ Gemini AI service initialized with model: gemini-1.5-pro-latest');
     } catch (error) {
       console.error('âŒ Failed to initialize Gemini AI:', error);
       this.initialized = false;
@@ -288,8 +288,8 @@ export class GeminiService {
         }
       }
 
-      // Generate content with Gemini Pro (free tier)
-      const model = this.genAI!.getGenerativeModel({ model: 'gemini-pro' });
+      // Generate content with Gemini 1.5 Pro Latest (stable, free tier)
+      const model = this.genAI!.getGenerativeModel({ model: 'gemini-1.5-pro-latest' });
       
       const enhancedPrompt = `You are a professional e-commerce product copywriter. Generate an engaging, SEO-optimized product description.
 
@@ -323,7 +323,7 @@ Generate only the description, no additional formatting or notes.`;
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'description', 'pending', request.prompt, request.productId || null,
-          request.adminId, description, 'gemini-pro', tokensUsed, cost, generationTime
+          request.adminId, description, 'gemini-1.5-pro-latest', tokensUsed, cost, generationTime
         ]
       );
 
@@ -407,7 +407,7 @@ Generate only the description, no additional formatting or notes.`;
         }
       }
 
-      const model = this.genAI!.getGenerativeModel({ model: 'gemini-pro' });
+      const model = this.genAI!.getGenerativeModel({ model: 'gemini-1.5-pro-latest' });
       
       const enhancedPrompt = `You are an expert at creating detailed image generation prompts. Create a highly detailed prompt for generating a professional product photo.
 
@@ -440,7 +440,7 @@ Generate only the image prompt, no additional commentary.`;
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'image', 'pending', request.prompt, request.productId || null,
-          request.adminId, imagePrompt, 'gemini-pro', tokensUsed, cost, generationTime
+          request.adminId, imagePrompt, 'gemini-1.5-pro-latest', tokensUsed, cost, generationTime
         ]
       );
 
