@@ -163,24 +163,32 @@ async function startServer() {
   try {
     console.log('🚀 Starting Ecommerce Backend Server...');
 
-    // Initialize database first
-    await initializeDatabase();
-    console.log('✅ Database initialized');
-
-    // Initialize AI service BEFORE server starts (uses same instance as controllers)
+    // Initialize database with timeout (max 10 seconds)
     try {
-      await geminiService.initialize();
-      console.log('🤖 AI service initialized successfully');
-    } catch (error) {
-      console.warn('⚠️ AI service initialization failed:', error instanceof Error ? error.message : 'Unknown error');
-      console.warn('   AI features may not work. Check GEMINI_API_KEY environment variable.');
+      const dbPromise = initializeDatabase();
+      const dbTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database initialization timeout')), 10000)
+      );
+      
+      await Promise.race([dbPromise, dbTimeout]);
+      console.log('✅ Database initialized');
+    } catch (dbError) {
+      console.warn('⚠️ Database initialization warning:', dbError instanceof Error ? dbError.message : 'Unknown error');
+      // Continue anyway - might be a timeout issue
     }
 
-    // Start server and bind to port
-    app.listen(PORT, '0.0.0.0', () => {
+    // Start server and bind to port FIRST (critical for Render)
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on http://localhost:${PORT}`);
       console.log(`📡 API available at http://localhost:${PORT}/api`);
       console.log(`🏥 Health check at http://localhost:${PORT}/api/health`);
+    });
+
+    // Initialize AI service in background (non-blocking)
+    // Don't wait for this - server must be listening
+    geminiService.initialize().catch(error => {
+      console.warn('⚠️ AI service initialization failed:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn('   AI features may not work. Check GEMINI_API_KEY environment variable.');
     });
 
   } catch (error) {
