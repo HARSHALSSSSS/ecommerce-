@@ -131,7 +131,7 @@ export class GeminiService {
       await this.ensureTablesExist();
 
       let apiKey = process.env.GEMINI_API_KEY;
-      console.log('ðŸ"' Checking for GEMINI_API_KEY in environment:', apiKey ? 'Found (length: ' + apiKey.length + ')' : 'Not found');
+      console.log('[Gemini] Checking for GEMINI_API_KEY in environment:', apiKey ? 'Found (length: ' + apiKey.length + ')' : 'Not found');
 
       if (!apiKey) {
         try {

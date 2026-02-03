@@ -48,48 +48,31 @@ app.use(helmet());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Ensure DB is initialized before handling any request
-app.use(async (req, res, next) => {
-  try {
-    getDatabase();
-    next();
-  } catch (err) {
-    console.error('Database not initialized:', err);
-    res.status(503).json({ success: false, message: 'Database not initialized. Please try again in a moment.' });
-  }
-});
-
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
-    // Allow all localhost origins for development
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
     }
-    
-    // Check against allowed origins from env
     const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [];
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
-    callback(null, true); // Allow all for now in development
+    callback(null, true);
   },
   credentials: true,
   optionsSuccessStatus: 200,
 }));
 
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 500, // limit each IP to 500 requests per minute (much higher for dev)
+  windowMs: 1 * 60 * 1000,
+  max: 500,
   message: 'Too many requests from this IP, please try again later.',
 });
 
 const authLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100, // Allow more attempts for testing/development
+  windowMs: 1 * 60 * 1000,
+  max: 100,
   message: 'Too many login attempts, please try again later.',
 });
 
@@ -160,40 +143,42 @@ app.use((req: Request, res: Response) => {
 
 // Initialize database and start server
 async function startServer() {
+  console.log('🚀 Starting server...');
+  
   try {
-    console.log('🚀 Starting Ecommerce Backend Server...');
-
-    // Initialize database with timeout (max 10 seconds)
-    try {
-      const dbPromise = initializeDatabase();
-      const dbTimeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Database initialization timeout')), 10000)
-      );
-      
-      await Promise.race([dbPromise, dbTimeout]);
-      console.log('✅ Database initialized');
-    } catch (dbError) {
-      console.warn('⚠️ Database initialization warning:', dbError instanceof Error ? dbError.message : 'Unknown error');
-      // Continue anyway - might be a timeout issue
-    }
-
-    // Start server and bind to port FIRST (critical for Render)
+    // START SERVER FIRST - This is critical
     const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`✅ Server running on http://localhost:${PORT}`);
-      console.log(`📡 API available at http://localhost:${PORT}/api`);
-      console.log(`🏥 Health check at http://localhost:${PORT}/api/health`);
+      console.log(`✅ Server listening on port ${PORT}`);
     });
 
-    // Initialize AI service in background (non-blocking)
-    // Don't wait for this - server must be listening
-    geminiService.initialize().catch(error => {
-      console.warn('⚠️ AI service initialization failed:', error instanceof Error ? error.message : 'Unknown error');
-      console.warn('   AI features may not work. Check GEMINI_API_KEY environment variable.');
-    });
+    // Set server timeout
+    server.setTimeout(30000);
 
+    // Initialize database asynchronously (non-blocking)
+    (async () => {
+      try {
+        console.log('Initializing database...');
+        await initializeDatabase();
+        console.log('✅ Database initialized');
+      } catch (error) {
+        console.error('❌ Database init failed:', error instanceof Error ? error.message : 'Unknown error');
+      }
+    })();
+
+    // Initialize AI service asynchronously (non-blocking)
+    (async () => {
+      try {
+        console.log('Initializing AI service...');
+        await geminiService.initialize();
+        console.log('✅ AI service initialized');
+      } catch (error) {
+        console.error('❌ AI service init failed:', error instanceof Error ? error.message : 'Unknown error');
+      }
+    })();
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
+    console.error('❌ Critical error:', error);
+    // Exit after 2 seconds to ensure logs are printed
+    setTimeout(() => process.exit(1), 2000);
   }
 }
 
@@ -202,6 +187,15 @@ process.on('SIGINT', async () => {
   console.log('\n👋 Shutting down gracefully...');
   await closeDatabase();
   process.exit(0);
+});
+
+// Catch all unhandled errors
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled rejection:', reason);
 });
 
 startServer();
