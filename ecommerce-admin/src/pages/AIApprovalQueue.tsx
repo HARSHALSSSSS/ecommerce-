@@ -21,6 +21,7 @@ interface Generation {
   type: 'image' | 'description'
   prompt: string
   generated_content: string
+  generated_image_url?: string
   status: string
   created_at: string
   product_id?: number
@@ -385,6 +386,19 @@ export default function AIApprovalQueue() {
                   {selectedGeneration.generated_content}
                 </div>
               </div>
+
+              {selectedGeneration.generated_image_url && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Generated Image</p>
+                  <div className="bg-gray-100 rounded-lg p-3 flex justify-center">
+                    <img 
+                      src={selectedGeneration.generated_image_url} 
+                      alt="Generated" 
+                      className="max-w-full max-h-96 rounded shadow-md"
+                    />
+                  </div>
+                </div>
+              )}
 
               {selectedGeneration.product_name && (
                 <div>

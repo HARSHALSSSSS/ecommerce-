@@ -22,6 +22,7 @@ interface Generation {
   id: number
   prompt: string
   generated_content: string
+  generated_image_url?: string
   status: string
   created_at: string
   product_name?: string
@@ -249,6 +250,16 @@ export default function AIImageGenerator() {
               <div className="bg-gray-50 rounded-xl p-4 mb-4">
                 <p className="text-gray-800 whitespace-pre-wrap">{result.generated_content}</p>
               </div>
+
+              {result.generated_image_url && (
+                <div className="mb-4 bg-gray-100 rounded-xl p-4 flex justify-center">
+                  <img 
+                    src={result.generated_image_url} 
+                    alt="Generated" 
+                    className="max-w-full max-h-96 rounded-lg shadow-md"
+                  />
+                </div>
+              )}
 
               <div className="flex items-center gap-3">
                 <button
