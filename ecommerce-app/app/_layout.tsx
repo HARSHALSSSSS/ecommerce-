@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -14,119 +15,99 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-// Prepare splash screen
-try {
-  SplashScreen.preventAutoHideAsync().catch(() => {});
-} catch (e) {
-  // Expo splash screen might not be available in some cases
-  console.warn('Could not prevent splash screen auto-hide');
-}
+// Keep splash screen visible while we load
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Brand colors matching the app theme
+const BRAND_COLOR = '#E07856';
 
 export default function RootLayout() {
-  const [dbReady, setDbReady] = useState(false);
+  const [appReady, setAppReady] = useState(false);
+  const [splashHidden, setSplashHidden] = useState(false);
   const initStartedRef = useRef(false);
 
+  const hideSplash = useCallback(async () => {
+    if (splashHidden) return;
+    try {
+      await SplashScreen.hideAsync();
+      setSplashHidden(true);
+    } catch (e) {
+      setSplashHidden(true);
+    }
+  }, [splashHidden]);
+
   useEffect(() => {
-    // Prevent multiple initializations
     if (initStartedRef.current) return;
     initStartedRef.current = true;
 
     const initializeApp = async () => {
       const startTime = Date.now();
+      
       try {
-        console.log('🚀 [INIT START] Initializing app...');
-        
-        // iOS optimization setup first (must be early)
-        console.log('📱 [iOS] Starting iOS optimization initialization...');
-        await initializeAppOptimizations();
-        console.log('✓ [iOS] iOS optimizations initialized');
-        
-        // Database init with timeout (5 seconds max)
-        console.log('🔄 [DB] Starting database initialization...');
-        const dbInitPromise = initDB();
-        const dbTimeout = new Promise((_, reject) =>
-          setTimeout(() => {
-            reject(new Error('Database initialization exceeded 5 second timeout'));
-          }, 5000)
-        );
+        // Run optimizations and database init in parallel for speed
+        await Promise.race([
+          Promise.all([
+            initializeAppOptimizations().catch(() => {}),
+            initDB().catch(() => {}),
+          ]),
+          new Promise(resolve => setTimeout(resolve, 2000)) // Max 2 seconds wait
+        ]);
 
-        try {
-          await Promise.race([dbInitPromise, dbTimeout]);
-          console.log('✓ [DB] Database initialized successfully');
-        } catch (dbErr) {
-          console.warn('⚠️ [DB] Database initialization warning:', (dbErr as Error).message);
-          // App will continue even if DB fails - it might have cached data
-        }
-
-        // Image preload in background (don't wait)
-        console.log('🖼️ [IMAGES] Starting background image preload...');
-        setTimeout(() => {
-          getAllProductsForImagePreload()
-            .then((products) => {
-              if (products?.length > 0) {
-                console.log(`📦 [IMAGES] Preloading ${products.length} product images in background...`);
-                preloadAllProductImages(products).catch((err) => {
-                  console.warn('⚠️ [IMAGES] Background image preload failed:', err);
-                });
-              }
-            })
-            .catch((err) => {
-              console.warn('⚠️ [IMAGES] Could not fetch products for preload:', err);
-            });
-        }, 100);
-
-        // Mark ready
-        console.log(`✓ [INIT SUCCESS] App ready in ${Date.now() - startTime}ms`);
-        setDbReady(true);
-        
-        // Hide splash screen
-        try {
-          await SplashScreen.hideAsync();
-          console.log('✓ [SPLASH] Splash screen hidden');
-        } catch (e) {
-          console.warn('⚠️ [SPLASH] Could not hide splash screen:', e);
-        }
+        console.log(`App initialized in ${Date.now() - startTime}ms`);
       } catch (error) {
-        console.error('❌ [INIT ERROR] Unexpected error during initialization:', error);
-        // Force ready state anyway
-        setDbReady(true);
-        try {
-          await SplashScreen.hideAsync();
-        } catch (e) {
-          console.warn('⚠️ [SPLASH] Could not hide splash screen on error:', e);
-        }
+        console.warn('Init error (continuing):', error);
       }
+      
+      // App is ready
+      setAppReady(true);
+      
+      // Hide splash after UI is painted
+      setTimeout(hideSplash, 50);
+      
+      // Background: preload images (non-blocking)
+      setTimeout(() => {
+        getAllProductsForImagePreload()
+          .then(products => {
+            if (products?.length > 0) {
+              preloadAllProductImages(products);
+            }
+          })
+          .catch(() => {});
+      }, 500);
     };
 
     initializeApp();
 
-    // CRITICAL SAFETY NET: Force app to render after 10 seconds maximum
-    // This prevents infinite loading screens
-    const safetyTimeoutId = setTimeout(() => {
-      if (!initStartedRef.current) {
-        console.error('❌ [TIMEOUT] Critical timeout: initialization took too long!');
-        setDbReady(true);
-        SplashScreen.hideAsync().catch(() => {
-          console.warn('⚠️ [SPLASH] Could not hide splash on timeout');
-        });
-      }
-    }, 10000);
+    // Safety timeout: ensure app renders within 3 seconds max
+    const safetyTimeout = setTimeout(() => {
+      setAppReady(true);
+      hideSplash();
+    }, 3000);
 
-    // Cleanup on app exit
     return () => {
-      clearTimeout(safetyTimeoutId);
-      cleanupOnAppExit().catch(err => 
-        console.warn('⚠️ [CLEANUP] Error during app cleanup:', err)
-      );
+      clearTimeout(safetyTimeout);
+      cleanupOnAppExit().catch(() => {});
     };
-  }, []);
+  }, [hideSplash]);
 
-  if (!dbReady) {
-    return null; // Return null while loading (splash screen shows)
+  // Show branded loading screen instead of white/null
+  if (!appReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <StatusBar style="dark" />
+        <View style={styles.loadingContent}>
+          <View style={styles.logoIcon}>
+            <Text style={styles.logoText}>🛍️</Text>
+          </View>
+          <Text style={styles.appName}>Agumentix</Text>
+          <ActivityIndicator size="large" color={BRAND_COLOR} style={styles.spinner} />
+        </View>
+      </View>
+    );
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
         <AuthProvider>
           <FeatureProvider>
@@ -139,7 +120,6 @@ export default function RootLayout() {
   );
 }
 
-// Separate component for navigation to access auth context
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
@@ -151,16 +131,19 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === 'login' || segments[0] === 'register';
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to login if not authenticated
       router.replace('/login');
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to home if authenticated and on auth screens
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, segments, navigationState?.key, isLoading]);
 
+  // Show loading with branded background instead of white
   if (isLoading) {
-    return null;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={BRAND_COLOR} />
+      </View>
+    );
   }
 
   return (
@@ -179,3 +162,46 @@ function RootLayoutNav() {
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: BRAND_COLOR,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: BRAND_COLOR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoText: {
+    fontSize: 40,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 24,
+  },
+  spinner: {
+    marginTop: 8,
+  },
+});

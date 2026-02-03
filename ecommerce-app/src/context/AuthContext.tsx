@@ -40,28 +40,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (token && userStr) {
         const userData = JSON.parse(userStr);
+        // Use cached user data immediately for fast startup
         setUser(userData);
+        setIsLoading(false);
         
-        // Verify token is still valid
-        try {
-          const response = await authAPI.getProfile();
-          if (response.success) {
-            setUser(response.user);
-            await AsyncStorage.setItem('user', JSON.stringify(response.user));
-            // Initialize push notifications for existing session
-            initializePushNotifications().catch(console.error);
+        // Validate token in background (non-blocking)
+        setTimeout(async () => {
+          try {
+            const response = await authAPI.getProfile();
+            if (response.success) {
+              setUser(response.user);
+              await AsyncStorage.setItem('user', JSON.stringify(response.user));
+              initializePushNotifications().catch(() => {});
+            }
+          } catch (error) {
+            // Token expired - clear session
+            console.log('Token validation failed, clearing session');
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('user');
+            setUser(null);
           }
-        } catch (error) {
-          // Token might be expired, clear session
-          console.log('Token validation failed, clearing session');
-          await AsyncStorage.removeItem('userToken');
-          await AsyncStorage.removeItem('user');
-          setUser(null);
-        }
+        }, 100);
+      } else {
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
-    } finally {
       setIsLoading(false);
     }
   };
