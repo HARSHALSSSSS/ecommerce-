@@ -138,6 +138,58 @@ export default function CartScreen() {
     if (checkoutLoading) return; // Prevent double-tap
     setCheckoutLoading(true);
     
+    // Load user data from AsyncStorage
+    let userAddress = '';
+    let userCity = '';
+    try {
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        userAddress = user.address || '';
+        userCity = user.city || '';
+        
+        // Check if profile is complete
+        if (!user.name || !user.phone || !user.address || !user.city) {
+          Alert.alert(
+            'Profile Required',
+            'Please complete your profile before placing an order.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setCheckoutLoading(false);
+                  // Navigate to user details
+                  router.push('/user-details' as any);
+                }
+              }
+            ]
+          );
+          return;
+        }
+      } else {
+        // No user data at all
+        Alert.alert(
+          'Profile Required',
+          'Please complete your profile before placing an order.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setCheckoutLoading(false);
+                router.push('/user-details' as any);
+              }
+            }
+          ]
+        );
+        return;
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      Alert.alert('Error', 'Failed to load user profile');
+      setCheckoutLoading(false);
+      return;
+    }
+    
     // When cart was loaded from API (logged-in user), create order on backend
     if (cartFromApi) {
       const tempOrderId = `ORD-${Date.now()}`;
@@ -166,8 +218,8 @@ export default function CartScreen() {
       InteractionManager.runAfterInteractions(() => {
         const orderData = {
           items: currentCartItems.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
-          delivery_address: 'Default Address',
-          city: 'Default City',
+          delivery_address: userAddress,
+          city: userCity,
           postal_code: '10001',
           payment_method: 'cash-on-delivery',
           notes: undefined,
@@ -194,7 +246,7 @@ export default function CartScreen() {
     try {
       const orderResult = await db.runAsync(
         'INSERT INTO orders (user_id, total_amount, status, delivery_address) VALUES (?, ?, ?, ?)',
-        [1, totalPrice, 'pending', 'Default Address']
+        [1, totalPrice, 'pending', userAddress]
       );
       for (const item of cartItems) {
         await db.runAsync(
@@ -234,8 +286,19 @@ export default function CartScreen() {
 
         {cartItems.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="cart-outline" size={80} color={COLORS.lightGray} />
-            <Text style={styles.emptyText}>Your cart is empty</Text>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="cart-outline" size={100} color={COLORS.primary} style={{ opacity: 0.3 }} />
+            </View>
+            <Text style={styles.emptyTitle}>Your Cart is Empty</Text>
+            <Text style={styles.emptySubtitle}>Looks like you haven't added any items yet</Text>
+            <TouchableOpacity 
+              style={styles.shopNowButton}
+              onPress={() => router.push('/(tabs)' as any)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="bag-handle-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.shopNowButtonText}>Start Shopping</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View>
@@ -263,6 +326,7 @@ export default function CartScreen() {
                 <TouchableOpacity
                   onPress={() => handleRemoveItem(item.id)}
                   style={styles.deleteButton}
+                  activeOpacity={0.6}
                 >
                   <Ionicons name="trash-outline" size={20} color={COLORS.primary} />
                 </TouchableOpacity>
@@ -292,6 +356,7 @@ export default function CartScreen() {
             style={styles.checkoutButton}
             onPress={handleCheckout}
             disabled={checkoutLoading}
+            activeOpacity={0.8}
           >
             {checkoutLoading ? (
               <ActivityIndicator size="small" color={COLORS.white} />
@@ -337,7 +402,47 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: RESPONSIVE_SPACING.xxl,
+    paddingVertical: RESPONSIVE_SPACING.xxl * 2,
+    paddingHorizontal: RESPONSIVE_SPACING.xl,
+  },
+  emptyIconContainer: {
+    marginBottom: RESPONSIVE_SPACING.xl,
+  },
+  emptyTitle: {
+    fontSize: RESPONSIVE_FONT.xl,
+    fontWeight: '700',
+    color: COLORS.dark,
+    marginBottom: RESPONSIVE_SPACING.sm,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: RESPONSIVE_FONT.sm,
+    color: COLORS.mediumGray,
+    marginBottom: RESPONSIVE_SPACING.xxl,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  shopNowButton: {
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: RESPONSIVE_SPACING.md + 2,
+    paddingHorizontal: RESPONSIVE_SPACING.xl,
+    borderRadius: BORDER_RADIUS.lg,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  shopNowButtonText: {
+    color: '#FFFFFF',
+    fontSize: RESPONSIVE_FONT.base,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   emptyText: {
     fontSize: RESPONSIVE_FONT.base,
@@ -430,14 +535,21 @@ const styles = StyleSheet.create({
   },
   checkoutButton: {
     backgroundColor: COLORS.primary,
-    paddingVertical: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.md + 4,
     borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 52,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   checkoutButtonText: {
     fontSize: RESPONSIVE_FONT.base,
     fontWeight: '700',
     color: COLORS.white,
+    letterSpacing: 0.5,
   },
 });

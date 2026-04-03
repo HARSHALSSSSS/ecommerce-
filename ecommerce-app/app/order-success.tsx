@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,9 +20,19 @@ export default function OrderSuccessScreen() {
 
   return (
     <SafeAreaView style={styles.safeContainer}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Success Animation */}
-        <View style={styles.successContainer}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView 
+          style={styles.container} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          {/* Success Animation */}
+          <View style={styles.successContainer}>
           <View style={styles.successCircle}>
             <Ionicons name="checkmark" size={60} color={COLORS.white} />
           </View>
@@ -121,6 +133,7 @@ export default function OrderSuccessScreen() {
           <TouchableOpacity
             style={styles.continueButton}
             onPress={() => router.push('/(tabs)')}
+            activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Continue Shopping</Text>
           </TouchableOpacity>
@@ -128,6 +141,7 @@ export default function OrderSuccessScreen() {
           <TouchableOpacity
             style={styles.trackButton}
             onPress={() => router.push('/(tabs)/profile')}
+            activeOpacity={0.7}
           >
             <Text style={styles.trackButtonText}>Track Order</Text>
           </TouchableOpacity>
@@ -135,6 +149,7 @@ export default function OrderSuccessScreen() {
 
         <View style={{ height: SPACING.xl }} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -147,12 +162,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.white,
+  },
+  scrollContent: {
     paddingHorizontal: RESPONSIVE_SPACING.lg,
+    paddingBottom: RESPONSIVE_SPACING.xl,
+    flexGrow: 1,
   },
   successContainer: {
     alignItems: 'center',
     paddingVertical: RESPONSIVE_SPACING.xl,
     marginBottom: RESPONSIVE_SPACING.lg,
+    marginTop: RESPONSIVE_SPACING.md,
   },
   successCircle: {
     width: 100,
@@ -296,29 +316,41 @@ const styles = StyleSheet.create({
   continueButton: {
     backgroundColor: COLORS.primary,
     borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
-    paddingVertical: RESPONSIVE_SPACING.lg,
+    paddingVertical: RESPONSIVE_SPACING.lg + 2,
     alignItems: 'center',
-    minHeight: RESPONSIVE_DIMENSION.buttonHeight,
+    minHeight: 52,
     justifyContent: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   continueButtonText: {
     color: COLORS.white,
     fontSize: RESPONSIVE_FONT.lg,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   trackButton: {
     backgroundColor: COLORS.white,
     borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
-    paddingVertical: RESPONSIVE_SPACING.lg,
+    paddingVertical: RESPONSIVE_SPACING.lg + 2,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: COLORS.primary,
-    minHeight: RESPONSIVE_DIMENSION.buttonHeight,
+    minHeight: 52,
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   trackButtonText: {
     color: COLORS.primary,
     fontSize: RESPONSIVE_FONT.lg,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
 });

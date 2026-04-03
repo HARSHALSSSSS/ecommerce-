@@ -753,7 +753,7 @@ export const settingsAPI = {
   rollback: (id: number, version: number) =>
     api.post(`/settings/${id}/rollback`, { version }),
 
-  // Get Public Settings (no auth required)
+ 
   getPublic: () => api.get('/settings/public/app'),
 }
 
@@ -841,17 +841,17 @@ export const aiAPI = {
   reject: (id: number, reason: string) =>
     api.post(`/ai/approvals/${id}/reject`, { reason }),
 
-  // Get My Quota
+  // 
   getMyQuota: () => api.get('/ai/quota/me'),
 
-  // Get Usage Statistics (Super Admin)
+  
   getUsageStats: (params?: { startDate?: string; endDate?: string }) =>
     api.get('/ai/usage/stats', { params }),
 
-  // Get AI Settings (Super Admin)
+  
   getSettings: () => api.get('/ai/settings'),
 
-  // Update AI Settings (Super Admin)
+  
   updateSettings: (data: {
     gemini_api_key?: string;
     daily_quota_per_user?: number;
@@ -862,6 +862,6 @@ export const aiAPI = {
     cost_per_1k_tokens_usd?: number;
   }) => api.put('/ai/settings', data),
 
-  // Initialize AI Service (Super Admin)
+  
   initialize: () => api.post('/ai/initialize'),
 }

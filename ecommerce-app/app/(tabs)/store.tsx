@@ -63,17 +63,25 @@ export default function StoreScreen() {
     try {
       console.log('📱 Loading store and products from API...');
       
+      // Calculate average rating from testimonials (5 stars and 4 stars = 4.5)
+      const testimonialRatings = [5, 4];
+      const averageRating = testimonialRatings.reduce((sum, rating) => sum + rating, 0) / testimonialRatings.length;
+      
       // Fetch store from backend API
       try {
         const storeResponse = await storesAPI.getAll();
         if (storeResponse.success && storeResponse.stores && storeResponse.stores.length > 0) {
-          setStore(storeResponse.stores[0]);
+          const storeData = storeResponse.stores[0];
+          setStore({
+            ...storeData,
+            rating: averageRating, // Update with calculated rating
+          });
         } else {
           setStore({
             id: 1,
             name: 'UFO Fashion',
             location: 'Mumbai, Maharashtra',
-            rating: 5.0,
+            rating: averageRating,
             followers: 50000,
             order_processed: '2 Hours',
           });

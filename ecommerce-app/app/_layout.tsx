@@ -11,10 +11,6 @@ import { AuthProvider, useAuth } from '@/src/context/AuthContext';
 import { FeatureProvider } from '@/src/context/FeatureContext';
 import { initializeAppOptimizations, cleanupOnAppExit } from '@/src/utils/appInitialization';
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
 // Keep splash screen visible while we load
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -130,9 +126,12 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === 'login' || segments[0] === 'register';
 
+    // Redirect unauthenticated users to login
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/login');
-    } else if (isAuthenticated && inAuthGroup) {
+    } 
+    // Redirect authenticated users away from auth screens
+    else if (isAuthenticated && inAuthGroup) {
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, segments, navigationState?.key, isLoading]);
@@ -158,6 +157,7 @@ function RootLayoutNav() {
       <Stack.Screen name="collection-detail" options={{ headerShown: false }} />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
       <Stack.Screen name="payments" options={{ headerShown: false }} />
+      <Stack.Screen name="user-details" options={{ headerShown: false }} />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>
   );

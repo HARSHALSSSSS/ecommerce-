@@ -80,11 +80,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initializePushNotifications().catch(console.error);
         return { success: true };
       } else {
-        return { success: false, message: response.message || 'Login failed' };
+        return { success: false, message: response.message || 'Invalid email or password' };
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Network error. Please try again.';
-      return { success: false, message };
+      console.error('Login error in AuthContext:', error);
+      // Determine the appropriate error message
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        return { success: false, message: 'Connection timed out. Please check your internet and try again.' };
+      } else if (error.message?.includes('Network Error') || !error.response) {
+        return { success: false, message: 'Unable to connect. Please check your internet connection.' };
+      } else if (error.response?.status === 401 || error.response?.status === 400) {
+        return { success: false, message: error.response?.data?.message || 'Invalid email or password' };
+      }
+      return { success: false, message: 'Something went wrong. Please try again.' };
     }
   };
 
@@ -101,8 +109,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, message: response.message || 'Registration failed' };
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Network error. Please try again.';
-      return { success: false, message };
+      console.error('Register error in AuthContext:', error);
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        return { success: false, message: 'Connection timed out. Please check your internet and try again.' };
+      } else if (error.message?.includes('Network Error') || !error.response) {
+        return { success: false, message: 'Unable to connect. Please check your internet connection.' };
+      } else if (error.response?.status === 409) {
+        return { success: false, message: 'An account with this email already exists' };
+      }
+      return { success: false, message: 'Something went wrong. Please try again.' };
     }
   };
 

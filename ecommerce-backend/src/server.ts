@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import { initializeDatabase, closeDatabase, getDatabase } from './config/database';
+import { initializeDatabase, closeDatabase } from './config/database';
 import authRoutes from './routes/authRoutes';
 import productRoutes from './routes/productRoutes';
 import orderRoutes from './routes/orderRoutes';
@@ -144,28 +144,23 @@ app.use((req: Request, res: Response) => {
 // Initialize database and start server
 async function startServer() {
   console.log('🚀 Starting server...');
-  
+
   try {
-    // START SERVER FIRST - This is critical
+    console.log('Initializing database...');
+    await initializeDatabase();
+    console.log('✅ Database initialized');
+  } catch (error) {
+    console.error('❌ Database init failed:', error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
+  }
+
+  try {
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server listening on port ${PORT}`);
     });
-
-    // Set server timeout
     server.setTimeout(30000);
 
-    // Initialize database asynchronously (non-blocking)
-    (async () => {
-      try {
-        console.log('Initializing database...');
-        await initializeDatabase();
-        console.log('✅ Database initialized');
-      } catch (error) {
-        console.error('❌ Database init failed:', error instanceof Error ? error.message : 'Unknown error');
-      }
-    })();
-
-    // Initialize AI service asynchronously (non-blocking)
+    // AI is optional; do not block HTTP traffic on it
     (async () => {
       try {
         console.log('Initializing AI service...');
@@ -177,7 +172,6 @@ async function startServer() {
     })();
   } catch (error) {
     console.error('❌ Critical error:', error);
-    // Exit after 2 seconds to ensure logs are printed
     setTimeout(() => process.exit(1), 2000);
   }
 }

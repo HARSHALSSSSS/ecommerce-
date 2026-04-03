@@ -208,39 +208,100 @@ export const storesAPI = {
 // User Auth API
 export const authAPI = {
   login: async (email: string, password: string) => {
-    return requestQueue.add(async () => {
-      const response = await api.post('/auth/user/login', { email, password });
-      if (response.data.success) {
-        await AsyncStorage.setItem('userToken', response.data.token);
-        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
-        setTimeout(() => {
-          api.post(`/admin/users/${response.data.user.id}/activity`, {
-            action: 'User logged in',
-            action_type: 'auth',
-            device_info: Platform.OS,
-          }).catch(() => {});
-        }, 100);
+    // Direct login call with retry logic for cold start handling
+    const maxRetries = 3;
+    let lastError: any = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔐 Login attempt ${attempt}/${maxRetries}`);
+        const response = await api.post('/auth/user/login', { email, password });
+        if (response.data.success) {
+          await AsyncStorage.setItem('userToken', response.data.token);
+          await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+          // Log activity in background (non-blocking)
+          setTimeout(() => {
+            api.post(`/admin/users/${response.data.user.id}/activity`, {
+              action: 'User logged in',
+              action_type: 'auth',
+              device_info: Platform.OS,
+            }).catch(() => {});
+          }, 100);
+        }
+        console.log('✅ Login successful');
+        return response.data;
+      } catch (error: any) {
+        lastError = error;
+        const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.message?.includes('Network Error');
+        
+        // Only retry on network/timeout errors, not on auth failures
+        if (isNetworkError && attempt < maxRetries) {
+          console.log(`⏳ Server waking up, retrying in ${attempt * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+          continue;
+        }
+        
+        // If it's an authentication error (400/401), don't retry
+        if (error.response?.status === 400 || error.response?.status === 401) {
+          console.log('❌ Authentication failed');
+          return error.response.data;
+        }
+        
+        // Max retries reached or non-retryable error
+        break;
       }
-      return response.data;
-    });
+    }
+    
+    // All retries failed
+    console.error('❌ Login failed after all retries:', lastError?.message);
+    throw lastError;
   },
 
   register: async (name: string, email: string, password: string) => {
-    return requestQueue.add(async () => {
-      const response = await api.post('/auth/user/register', { name, email, password });
-      if (response.data.success) {
-        await AsyncStorage.setItem('userToken', response.data.token);
-        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
-        setTimeout(() => {
-          api.post(`/admin/users/${response.data.user.id}/activity`, {
-            action: 'User registered',
-            action_type: 'auth',
-            device_info: Platform.OS,
-          }).catch(() => {});
-        }, 100);
+    // Direct register call with retry logic for cold start handling
+    const maxRetries = 3;
+    let lastError: any = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📝 Register attempt ${attempt}/${maxRetries}`);
+        const response = await api.post('/auth/user/register', { name, email, password });
+        if (response.data.success) {
+          await AsyncStorage.setItem('userToken', response.data.token);
+          await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+          setTimeout(() => {
+            api.post(`/admin/users/${response.data.user.id}/activity`, {
+              action: 'User registered',
+              action_type: 'auth',
+              device_info: Platform.OS,
+            }).catch(() => {});
+          }, 100);
+        }
+        console.log('✅ Registration successful');
+        return response.data;
+      } catch (error: any) {
+        lastError = error;
+        const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.message?.includes('Network Error');
+        
+        // Only retry on network/timeout errors
+        if (isNetworkError && attempt < maxRetries) {
+          console.log(`⏳ Server waking up, retrying in ${attempt * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+          continue;
+        }
+        
+        // If it's a validation error (400) or user exists (409), don't retry
+        if (error.response?.status === 400 || error.response?.status === 409) {
+          console.log('❌ Registration validation failed');
+          return error.response.data;
+        }
+        
+        break;
       }
-      return response.data;
-    });
+    }
+    
+    console.error('❌ Registration failed after all retries:', lastError?.message);
+    throw lastError;
   },
 
   logout: async () => {

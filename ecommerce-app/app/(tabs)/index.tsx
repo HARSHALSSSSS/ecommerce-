@@ -60,13 +60,14 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [userName, setUserName] = useState('Maruyama');
-  const [deliveryAddress, setDeliveryAddress] = useState('Mega Regency');
+  const [userName, setUserName] = useState('Guest');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [newAddress, setNewAddress] = useState(deliveryAddress);
+  const [newAddress, setNewAddress] = useState('');
   const [loadingImages, setLoadingImages] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -79,6 +80,7 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       loadUserName();
+      loadDeliveryAddress();
       loadData(); // Refresh products to get latest prices from backend
     }, [])
   );
@@ -109,13 +111,32 @@ export default function HomeScreen() {
 
   const loadDeliveryAddress = async () => {
     try {
-      const saved = await AsyncStorage.getItem('deliveryAddress');
-      if (saved) {
-        setDeliveryAddress(saved);
-        setNewAddress(saved);
+      // Load from 'user' object (same as profile/checkout)
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        // Combine address and city for display
+        if (user.address && user.city) {
+          setDeliveryAddress(`${user.address}, ${user.city}`);
+          setNewAddress(`${user.address}, ${user.city}`);
+        } else if (user.address) {
+          setDeliveryAddress(user.address);
+          setNewAddress(user.address);
+        } else if (user.city) {
+          setDeliveryAddress(user.city);
+          setNewAddress(user.city);
+        } else {
+          setDeliveryAddress('Set delivery address');
+          setNewAddress('');
+        }
+        return;
       }
+      // Fallback: no address set
+      setDeliveryAddress('Set delivery address');
+      setNewAddress('');
     } catch (error) {
       console.error('Error loading delivery address:', error);
+      setDeliveryAddress('Set delivery address');
     }
   };
 
@@ -202,12 +223,21 @@ export default function HomeScreen() {
       console.error('❌ Error loading data from API:', error?.message || error);
       console.error('❌ Error details:', JSON.stringify(error, null, 2));
       setLoadError(error?.message || 'Failed to load products');
-      // Show error to user - don't use stale/mock data as prices may be wrong
-      Alert.alert(
-        'Connection Error',
-        `Unable to load products from server. Error: ${error?.message || 'Unknown error'}. Please check your network connection and try again.`,
-        [{ text: 'Retry', onPress: () => loadData() }]
-      );
+      
+      // Silent retry on first attempts (up to 2 retries)
+      if (retryCount < 2) {
+        console.log(`🔄 Retrying... (attempt ${retryCount + 1}/2)`);
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          loadData();
+        }, 2000); // Wait 2 seconds before retry
+      } else {
+        // After retries exhausted, set error state but DON'T show alert
+        // User will see inline error message with manual retry button
+        console.log('❌ All retry attempts exhausted');
+        setAllProducts([]);
+        setProducts([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -269,14 +299,40 @@ export default function HomeScreen() {
     setShowSearchResults(false);
   };
 
+  const handleRetry = () => {
+    setRetryCount(0);
+    setLoadError(null);
+    loadData();
+  };
+
   const handleChangeAddress = async () => {
     if (newAddress.trim().length === 0) {
       Alert.alert('Error', 'Please enter a valid address');
       return;
     }
     try {
-      await AsyncStorage.setItem('deliveryAddress', newAddress);
-      setDeliveryAddress(newAddress);
+      // Update the user object to keep data in sync
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        // Store the full address in the address field
+        user.address = newAddress.trim();
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+        await AsyncStorage.setItem('userProfile', JSON.stringify(user)); // Backward compatibility
+      } else {
+        // Create new user object if none exists
+        const newUser = {
+          name: userName,
+          address: newAddress.trim(),
+          city: '',
+          phone: '',
+          email: '',
+        };
+        await AsyncStorage.setItem('user', JSON.stringify(newUser));
+        await AsyncStorage.setItem('userProfile', JSON.stringify(newUser));
+      }
+      
+      setDeliveryAddress(newAddress.trim());
       setShowAddressModal(false);
       Alert.alert('Success', 'Delivery address updated successfully');
     } catch (error) {
@@ -348,6 +404,7 @@ export default function HomeScreen() {
           pathname: '/product-detail',
           params: { productId: item.id }
         })}
+        activeOpacity={0.8}
       >
         <View style={styles.productImage}>
           {imageUri ? (
@@ -407,6 +464,37 @@ export default function HomeScreen() {
       </TouchableOpacity>
     );
   };
+
+  // Show loading indicator during initial load
+  if (isLoading && products.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading products...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show error state with retry button
+  if (loadError && products.length === 0 && !isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="cloud-offline-outline" size={80} color={COLORS.mediumGray} />
+          <Text style={styles.errorTitle}>Unable to Load Products</Text>
+          <Text style={styles.errorMessage}>
+            Please check your internet connection and try again.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetry} activeOpacity={0.8}>
+            <Ionicons name="reload" size={20} color={COLORS.white} />
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeContainer} edges={['left', 'right']}>
@@ -474,7 +562,7 @@ export default function HomeScreen() {
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Collection</Text>
-            <TouchableOpacity onPress={() => router.push('/collection-detail')}>
+            <TouchableOpacity onPress={() => router.push('/collection-detail')} activeOpacity={0.7}>
               <Text style={styles.viewMore}>See More</Text>
             </TouchableOpacity>
           </View>
@@ -523,7 +611,7 @@ export default function HomeScreen() {
               <Ionicons name="search" size={60} color={COLORS.lightGray} />
               <Text style={styles.emptyStateTitle}>No products found</Text>
               <Text style={styles.emptyStateSubtitle}>Try searching with different keywords</Text>
-              <TouchableOpacity style={styles.resetButton} onPress={clearSearch}>
+              <TouchableOpacity style={styles.resetButton} onPress={clearSearch} activeOpacity={0.7}>
                 <Text style={styles.resetButtonText}>Clear Search</Text>
               </TouchableOpacity>
             </View>
@@ -555,7 +643,7 @@ export default function HomeScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Change Delivery Address</Text>
-              <TouchableOpacity onPress={() => setShowAddressModal(false)}>
+              <TouchableOpacity onPress={() => setShowAddressModal(false)} activeOpacity={0.7}>
                 <Ionicons name="close" size={24} color={COLORS.dark} />
               </TouchableOpacity>
             </View>
@@ -580,12 +668,14 @@ export default function HomeScreen() {
                   setNewAddress(deliveryAddress);
                   setShowAddressModal(false);
                 }}
+                activeOpacity={0.7}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={handleChangeAddress}
+                activeOpacity={0.8}
               >
                 <Text style={styles.confirmButtonText}>Save Address</Text>
               </TouchableOpacity>
@@ -899,6 +989,59 @@ const styles = StyleSheet.create({
     color: COLORS.dark,
     backgroundColor: COLORS.lightGray,
     textAlignVertical: 'top',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+  },
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: RESPONSIVE_FONT.base,
+    color: COLORS.mediumGray,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    paddingHorizontal: SPACING.xl,
+  },
+  errorTitle: {
+    marginTop: SPACING.lg,
+    fontSize: RESPONSIVE_FONT.xl,
+    fontWeight: '700',
+    color: COLORS.dark,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    marginTop: SPACING.sm,
+    fontSize: RESPONSIVE_FONT.base,
+    color: COLORS.mediumGray,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  retryButton: {
+    marginTop: SPACING.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: BORDER_RADIUS.lg,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  retryButtonText: {
+    marginLeft: SPACING.sm,
+    fontSize: RESPONSIVE_FONT.base,
+    fontWeight: '700',
+    color: COLORS.white,
+    letterSpacing: 0.5,
+  },
     minHeight: 120,
   },
   modalFooter: {

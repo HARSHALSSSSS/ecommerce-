@@ -125,11 +125,11 @@ export default function ProfileScreen() {
   const { user, logout, updateUser, isAuthenticated } = useAuth();
   
   const [profile, setProfile] = useState<UserProfile>({
-    name: user?.name || 'Guest',
-    email: user?.email || 'guest@example.com',
-    phone: user?.phone || '+62 812 3456 7890',
-    address: user?.address || '123 Fashion Street',
-    city: user?.city || 'Jakarta, Indonesia',
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    city: user?.city || '',
   });
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -145,20 +145,49 @@ export default function ProfileScreen() {
   const [orderRefunds, setOrderRefunds] = useState<Refund[]>([]);
   const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
 
-  // Sync profile with user from auth context
+  // Sync profile with user from auth context AND AsyncStorage
   useEffect(() => {
-    if (user) {
-      const updatedProfile = {
-        name: user.name || 'Guest',
-        email: user.email || 'guest@example.com',
-        phone: user.phone || '+62 812 3456 7890',
-        address: user.address || '123 Fashion Street',
-        city: user.city || 'Jakarta, Indonesia',
-      };
-      setProfile(updatedProfile);
-      setEditData(updatedProfile);
-    }
+    loadProfileData();
   }, [user]);
+
+  const loadProfileData = async () => {
+    try {
+      // First check AsyncStorage for latest data
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        const updatedProfile = {
+          name: userData.name || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          address: userData.address || '',
+          city: userData.city || '',
+        };
+        setProfile(updatedProfile);
+        setEditData(updatedProfile);
+      } else if (user) {
+        // Fallback to auth context if no AsyncStorage data
+        const updatedProfile = {
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          address: user.address || '',
+          city: user.city || '',
+        };
+        setProfile(updatedProfile);
+        setEditData(updatedProfile);
+      }
+    } catch (error) {
+      console.error('Error loading profile data:', error);
+    }
+  };
+
+  // Reload profile data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadProfileData();
+    }, [])
+  );
 
   const loadProfile = async () => {
     // Profile is now loaded from AuthContext
@@ -313,23 +342,26 @@ export default function ProfileScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Submit',
-          onPress: async (reason) => {
+          onPress: (reason?: string) => {
             if (!reason?.trim()) {
               Alert.alert('Error', 'Please provide a reason for your refund request.');
               return;
             }
-            try {
-              const response = await ordersAPI.requestRefund(order.id, reason);
-              if (response.success) {
-                Alert.alert('Success', 'Refund request submitted successfully');
-                loadOrders();
-                setShowOrderDetail(false);
-              } else {
-                Alert.alert('Error', response.message || 'Failed to submit refund request');
+            // Handle async operation
+            (async () => {
+              try {
+                const response = await ordersAPI.requestRefund(order.id, reason);
+                if (response.success) {
+                  Alert.alert('Success', 'Refund request submitted successfully');
+                  loadOrders();
+                  setShowOrderDetail(false);
+                } else {
+                  Alert.alert('Error', response.message || 'Failed to submit refund request');
+                }
+              } catch (error: any) {
+                Alert.alert('Error', error.response?.data?.message || 'Failed to submit refund request');
               }
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to submit refund request');
-            }
+            })();
           },
         },
       ],
@@ -445,18 +477,20 @@ export default function ProfileScreen() {
           <TouchableOpacity 
             style={styles.trackButton}
             onPress={() => handleViewOrderDetail(item)}
+            activeOpacity={0.7}
           >
-            <Ionicons name="eye-outline" size={14} color={COLORS.primary} />
+            <Ionicons name="eye-outline" size={16} color={COLORS.primary} />
             <Text style={styles.trackButtonText}>View Details</Text>
           </TouchableOpacity>
           
           {['pending', 'confirmed'].includes(item.status) && (
             <TouchableOpacity 
-              style={[styles.trackButton, { marginLeft: SPACING.sm }]}
+              style={[styles.trackButton, { backgroundColor: '#FEE2E2', marginLeft: SPACING.sm }]}
               onPress={() => handleCancelOrder(item)}
+              activeOpacity={0.7}
             >
-              <Ionicons name="close-circle-outline" size={14} color="#EF4444" />
-              <Text style={[styles.trackButtonText, { color: '#EF4444' }]}>Cancel</Text>
+              <Ionicons name="close-circle-outline" size={16} color="#EF4444" />
+              <Text style={[styles.trackButtonText, { color: '#EF4444' }]}>Cancel Order</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -1057,16 +1091,17 @@ export default function ProfileScreen() {
             <View style={styles.modalFooter}>
               {selectedOrder && ['pending', 'confirmed'].includes(selectedOrder.status) && (
                 <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: '#FEE2E2', flex: 1, marginRight: SPACING.sm }]}
+                  style={[styles.modalButton, { backgroundColor: '#FEE2E2', flex: 1, marginRight: SPACING.sm, borderWidth: 1, borderColor: '#FCA5A5' }]}
                   onPress={() => handleCancelOrder(selectedOrder)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[styles.cancelButtonText, { color: '#EF4444' }]}>Cancel Order</Text>
+                  <Text style={[styles.cancelButtonText, { color: '#EF4444', fontWeight: '700' }]}>Cancel Order</Text>
                 </TouchableOpacity>
               )}
               {selectedOrder?.status === 'delivered' && (
                 <>
                   <TouchableOpacity
-                    style={[styles.modalButton, { backgroundColor: '#EDE9FE', flex: 1, marginRight: SPACING.sm }]}
+                    style={[styles.modalButton, { backgroundColor: '#EDE9FE', flex: 1, marginRight: SPACING.sm, borderWidth: 1, borderColor: '#C4B5FD' }]}
                     onPress={() => {
                       setShowOrderDetail(false);
                       router.push({
@@ -1074,20 +1109,23 @@ export default function ProfileScreen() {
                         params: { orderId: selectedOrder.id.toString() }
                       });
                     }}
+                    activeOpacity={0.7}
                   >
-                    <Text style={[styles.cancelButtonText, { color: '#8B5CF6' }]}>Request Return</Text>
+                    <Text style={[styles.cancelButtonText, { color: '#8B5CF6', fontWeight: '700' }]}>Request Return</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.modalButton, { backgroundColor: '#FEF3C7', flex: 1, marginRight: SPACING.sm }]}
+                    style={[styles.modalButton, { backgroundColor: '#FEF3C7', flex: 1, marginRight: SPACING.sm, borderWidth: 1, borderColor: '#FDE68A' }]}
                     onPress={() => handleRequestRefund(selectedOrder)}
+                    activeOpacity={0.7}
                   >
-                    <Text style={[styles.cancelButtonText, { color: '#F59E0B' }]}>Request Refund</Text>
+                    <Text style={[styles.cancelButtonText, { color: '#F59E0B', fontWeight: '700' }]}>Request Refund</Text>
                   </TouchableOpacity>
                 </>
               )}
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton, { flex: 1 }]}
                 onPress={() => setShowOrderDetail(false)}
+                activeOpacity={0.8}
               >
                 <Text style={styles.confirmButtonText}>Close</Text>
               </TouchableOpacity>
@@ -1367,15 +1405,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFF5F0',
-    paddingVertical: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.md + 2,
+    paddingHorizontal: RESPONSIVE_SPACING.lg,
     borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
     gap: RESPONSIVE_SPACING.sm,
-    minHeight: 44,
+    minHeight: 46,
+    flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   trackButtonText: {
-    fontSize: RESPONSIVE_FONT.xs,
-    fontWeight: '600',
+    fontSize: RESPONSIVE_FONT.sm,
+    fontWeight: '700',
     color: COLORS.primary,
+    letterSpacing: 0.3,
   },
   modalOverlay: {
     flex: 1,
@@ -1436,27 +1482,37 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    paddingVertical: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.md + 2,
+    paddingHorizontal: RESPONSIVE_SPACING.lg,
     borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: RESPONSIVE_DIMENSION.buttonHeight,
+    minHeight: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   cancelButton: {
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   confirmButton: {
     backgroundColor: COLORS.primary,
   },
   cancelButtonText: {
     fontSize: RESPONSIVE_FONT.sm,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.dark,
+    letterSpacing: 0.3,
   },
   confirmButtonText: {
     fontSize: RESPONSIVE_FONT.sm,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.white,
+    letterSpacing: 0.3,
   },
   orderActions: {
     flexDirection: 'row',

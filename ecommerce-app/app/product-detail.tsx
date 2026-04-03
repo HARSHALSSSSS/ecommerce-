@@ -13,10 +13,12 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { productsAPI, cartAPI, activityAPI } from '@/src/services/api';
 import { COLORS, SPACING, BORDER_RADIUS } from '@/src/constants/colors';
 import { RESPONSIVE_FONT, RESPONSIVE_SPACING, RESPONSIVE_DIMENSION } from '@/src/constants/responsive';
 import { validateImageUrl } from '@/src/utils/imageCache';
+import Toast from '@/components/Toast';
 
 // Category-specific size options
 const SIZE_OPTIONS: Record<string, string[]> = {
@@ -60,6 +62,9 @@ export default function ProductDetailScreen() {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [imageLoading, setImageLoading] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
   // Get sizes based on product category
   const getSizesForCategory = (category?: string): string[] => {
@@ -158,9 +163,13 @@ export default function ProductDetailScreen() {
       const result = await cartAPI.addItem(product.id, quantity, sizeToSend);
       
       if (result.success) {
-        Alert.alert('Success', 'Product added to cart!');
+        setToastMessage('🛒 Product added to cart!');
+        setToastType('success');
+        setShowToast(true);
       } else {
-        Alert.alert('Error', result.message || 'Failed to add to cart');
+        setToastMessage(result.message || 'Failed to add to cart');
+        setToastType('error');
+        setShowToast(true);
       }
     } catch (error: any) {
       console.error('Error adding to cart:', error);
@@ -172,7 +181,9 @@ export default function ProductDetailScreen() {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      Alert.alert('Cart Error', errorMessage);
+      setToastMessage(errorMessage);
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -182,18 +193,93 @@ export default function ProductDetailScreen() {
     // If no sizes available for this category, pass 'N/A' instead of empty string
     const sizeToSend = availableSizes.length > 0 ? selectedSize : 'N/A';
     
-    // Navigate to checkout screen with product details
-    router.push({
-      pathname: '/checkout',
-      params: {
-        productId: product.id,
-        productName: product.name,
-        productPrice: product.price,
-        discount: product.discount_percent,
-        quantity: quantity,
-        size: sizeToSend,
-      },
-    });
+    // Check if user profile is complete before proceeding
+    try {
+      const userStr = await AsyncStorage.getItem('user');
+      let isProfileComplete = false;
+      
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        // Check if all required fields are present and not empty
+        isProfileComplete = !!(
+          user.name?.trim() &&
+          user.phone?.trim() &&
+          user.address?.trim() &&
+          user.city?.trim()
+        );
+      }
+      
+      if (!isProfileComplete) {
+        // Profile incomplete - navigate to user details screen first
+        Alert.alert(
+          'Complete Your Profile',
+          'Please provide your contact and delivery information to proceed with your purchase.',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Continue',
+              onPress: () => {
+                // @ts-ignore - User details screen route
+                router.push({
+                  pathname: '/user-details',
+                  params: {
+                    productId: product.id,
+                    productName: product.name,
+                    productPrice: product.price,
+                    discount: product.discount_percent,
+                    quantity: quantity,
+                    size: sizeToSend,
+                    returnTo: 'checkout',
+                  },
+                });
+              },
+            },
+          ]
+        );
+        return;
+      }
+      
+      // Profile is complete - navigate directly to checkout
+      router.push({
+        pathname: '/checkout',
+        params: {
+          productId: product.id,
+          productName: product.name,
+          productPrice: product.price,
+          discount: product.discount_percent,
+          quantity: quantity,
+          size: sizeToSend,
+        },
+      });
+    } catch (error) {
+      console.error('Error checking user profile:', error);
+      // If there's an error, still allow checkout but show a warning
+      Alert.alert(
+        'Warning',
+        'Unable to verify your profile. You may need to update your delivery information during checkout.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              router.push({
+                pathname: '/checkout',
+                params: {
+                  productId: product.id,
+                  productName: product.name,
+                  productPrice: product.price,
+                  discount: product.discount_percent,
+                  quantity: quantity,
+                  size: sizeToSend,
+                },
+              });
+            },
+          },
+        ]
+      );
+    }
   };
 
   if (!product) {
@@ -208,7 +294,11 @@ export default function ProductDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         <View style={styles.header}>
           <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color={COLORS.dark} />
@@ -307,7 +397,7 @@ export default function ProductDetailScreen() {
             <View style={styles.sizeSection}>
               <View style={styles.sizeHeader}>
                 <Text style={styles.sizeLabel}>Size</Text>
-                <TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.7}>
                   <Text style={styles.chooseVariant}>Choose Variant</Text>
                 </TouchableOpacity>
               </View>
@@ -320,6 +410,7 @@ export default function ProductDetailScreen() {
                       selectedSize === size && styles.sizeButtonSelected,
                     ]}
                     onPress={() => setSelectedSize(size)}
+                    activeOpacity={0.7}
                   >
                     <Text
                       style={[
@@ -341,6 +432,7 @@ export default function ProductDetailScreen() {
               <TouchableOpacity
                 onPress={() => setQuantity(Math.max(1, quantity - 1))}
                 style={styles.quantityButton}
+                activeOpacity={0.6}
               >
                 <Text style={styles.quantityButtonText}>−</Text>
               </TouchableOpacity>
@@ -348,6 +440,7 @@ export default function ProductDetailScreen() {
               <TouchableOpacity
                 onPress={() => setQuantity(quantity + 1)}
                 style={styles.quantityButton}
+                activeOpacity={0.6}
               >
                 <Text style={styles.quantityButtonText}>+</Text>
               </TouchableOpacity>
@@ -356,14 +449,21 @@ export default function ProductDetailScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.buttonSection, { paddingBottom: Math.max(RESPONSIVE_SPACING.lg, Platform.OS === 'android' ? insets.bottom + 16 : insets.bottom) }]}>
-        <TouchableOpacity style={styles.buyButton} onPress={handleBuyNow}>
+      <View style={styles.buttonSection}>
+        <TouchableOpacity style={styles.buyButton} onPress={handleBuyNow} activeOpacity={0.8}>
           <Text style={styles.buyButtonText}>Buy Now</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.cartButton} onPress={handleAddToCart}>
+        <TouchableOpacity style={styles.cartButton} onPress={handleAddToCart} activeOpacity={0.8}>
           <Text style={styles.cartButtonText}>Add Cart</Text>
         </TouchableOpacity>
       </View>
+      
+      <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        type={toastType}
+        onHide={() => setShowToast(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -579,38 +679,63 @@ const styles = StyleSheet.create({
   buttonSection: {
     flexDirection: 'row',
     paddingHorizontal: RESPONSIVE_SPACING.lg,
-    paddingVertical: RESPONSIVE_SPACING.lg,
+    paddingTop: RESPONSIVE_SPACING.md,
+    paddingBottom: Platform.OS === 'android' ? RESPONSIVE_SPACING.lg : RESPONSIVE_SPACING.md,
     gap: RESPONSIVE_SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   buyButton: {
     flex: 1,
     backgroundColor: COLORS.primary,
-    paddingVertical: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.md + 4,
     borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: RESPONSIVE_DIMENSION.buttonHeight,
+    minHeight: 52,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   buyButtonText: {
-    fontSize: RESPONSIVE_FONT.sm,
+    fontSize: RESPONSIVE_FONT.base,
     fontWeight: '700',
     color: COLORS.white,
+    letterSpacing: 0.5,
   },
   cartButton: {
     flex: 1,
     backgroundColor: COLORS.dark,
-    paddingVertical: RESPONSIVE_SPACING.md,
+    paddingVertical: RESPONSIVE_SPACING.md + 4,
     borderRadius: RESPONSIVE_DIMENSION.buttonBorderRadius,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: RESPONSIVE_DIMENSION.buttonHeight,
+    minHeight: 52,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
   },
   cartButtonText: {
-    fontSize: RESPONSIVE_FONT.sm,
+    fontSize: RESPONSIVE_FONT.base,
     fontWeight: '700',
     color: COLORS.white,
+    letterSpacing: 0.5,
   },
   loadingIndicator: {
     position: 'absolute',

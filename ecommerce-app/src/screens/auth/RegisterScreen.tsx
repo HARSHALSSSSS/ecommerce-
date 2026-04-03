@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +26,8 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
@@ -79,19 +80,26 @@ export default function RegisterScreen() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrorMessage('');
+    setLoadingStatus('Connecting to server...');
+    
     try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setLoadingStatus('Creating account...');
+      
       const result = await register(name.trim(), email.trim().toLowerCase(), password);
       
       if (result.success) {
+        setLoadingStatus('Success!');
         // Navigation will happen automatically via auth state change
-        Alert.alert('Success', 'Account created successfully!');
       } else {
-        Alert.alert('Registration Failed', result.message || 'Please try again');
+        setErrorMessage(result.message || 'Please try again');
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      setErrorMessage('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
+      setLoadingStatus('');
     }
   };
 
@@ -133,6 +141,7 @@ export default function RegisterScreen() {
                 onChangeText={(text) => {
                   setName(text);
                   if (errors.name) setErrors({ ...errors, name: undefined });
+                  if (errorMessage) setErrorMessage('');
                 }}
                 autoCapitalize="words"
                 editable={!isLoading}
@@ -151,6 +160,7 @@ export default function RegisterScreen() {
                 onChangeText={(text) => {
                   setEmail(text);
                   if (errors.email) setErrors({ ...errors, email: undefined });
+                  if (errorMessage) setErrorMessage('');
                 }}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -171,6 +181,7 @@ export default function RegisterScreen() {
                 onChangeText={(text) => {
                   setPassword(text);
                   if (errors.password) setErrors({ ...errors, password: undefined });
+                  if (errorMessage) setErrorMessage('');
                 }}
                 secureTextEntry={!showPassword}
                 editable={!isLoading}
@@ -199,6 +210,7 @@ export default function RegisterScreen() {
                 onChangeText={(text) => {
                   setConfirmPassword(text);
                   if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
+                  if (errorMessage) setErrorMessage('');
                 }}
                 secureTextEntry={!showConfirmPassword}
                 editable={!isLoading}
@@ -269,6 +281,14 @@ export default function RegisterScreen() {
             </TouchableOpacity>
             {errors.terms && <Text style={styles.errorText}>{errors.terms}</Text>}
 
+            {/* Error Message */}
+            {errorMessage ? (
+              <View style={styles.errorBanner}>
+                <Ionicons name="alert-circle" size={18} color={COLORS.error} />
+                <Text style={styles.errorBannerText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
             {/* Register Button */}
             <TouchableOpacity
               style={[styles.registerButton, isLoading && styles.registerButtonDisabled]}
@@ -276,7 +296,10 @@ export default function RegisterScreen() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color={COLORS.white} />
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color={COLORS.white} size="small" />
+                  <Text style={styles.loadingText}>{loadingStatus}</Text>
+                </View>
               ) : (
                 <Text style={styles.registerButtonText}>Create Account</Text>
               )}
@@ -440,6 +463,31 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: RESPONSIVE_FONT.base,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  loadingText: {
+    color: COLORS.white,
+    fontSize: RESPONSIVE_FONT.sm,
+    fontWeight: '500',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${COLORS.error}15`,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  errorBannerText: {
+    color: COLORS.error,
+    fontSize: RESPONSIVE_FONT.sm,
+    flex: 1,
   },
   loginContainer: {
     flexDirection: 'row',

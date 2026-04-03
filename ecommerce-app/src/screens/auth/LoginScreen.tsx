@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +23,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validateForm = () => {
@@ -49,18 +50,27 @@ export default function LoginScreen() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrorMessage('');
+    setLoadingStatus('Connecting to server...');
+    
     try {
+      // Small delay to show connecting message
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setLoadingStatus('Signing in...');
+      
       const result = await login(email.trim().toLowerCase(), password);
       
       if (result.success) {
+        setLoadingStatus('Success!');
         // Navigation will happen automatically via auth state change
       } else {
-        Alert.alert('Login Failed', result.message || 'Please check your credentials');
+        setErrorMessage(result.message || 'Please check your credentials');
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      setErrorMessage('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
+      setLoadingStatus('');
     }
   };
 
@@ -104,6 +114,7 @@ export default function LoginScreen() {
                 onChangeText={(text) => {
                   setEmail(text);
                   if (errors.email) setErrors({ ...errors, email: undefined });
+                  if (errorMessage) setErrorMessage('');
                 }}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -124,6 +135,7 @@ export default function LoginScreen() {
                 onChangeText={(text) => {
                   setPassword(text);
                   if (errors.password) setErrors({ ...errors, password: undefined });
+                  if (errorMessage) setErrorMessage('');
                 }}
                 secureTextEntry={!showPassword}
                 editable={!isLoading}
@@ -146,6 +158,14 @@ export default function LoginScreen() {
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
+            {/* Error Message */}
+            {errorMessage ? (
+              <View style={styles.errorBanner}>
+                <Ionicons name="alert-circle" size={18} color={COLORS.error} />
+                <Text style={styles.errorBannerText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
             {/* Login Button */}
             <TouchableOpacity
               style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
@@ -153,7 +173,10 @@ export default function LoginScreen() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color={COLORS.white} />
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color={COLORS.white} size="small" />
+                  <Text style={styles.loadingText}>{loadingStatus}</Text>
+                </View>
               ) : (
                 <Text style={styles.loginButtonText}>Sign In</Text>
               )}
@@ -308,6 +331,31 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: RESPONSIVE_FONT.base,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  loadingText: {
+    color: COLORS.white,
+    fontSize: RESPONSIVE_FONT.sm,
+    fontWeight: '500',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${COLORS.error}15`,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  errorBannerText: {
+    color: COLORS.error,
+    fontSize: RESPONSIVE_FONT.sm,
+    flex: 1,
   },
   divider: {
     flexDirection: 'row',
